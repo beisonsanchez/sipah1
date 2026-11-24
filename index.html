@@ -2,10 +2,10 @@
 <html lang="es-CO">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
   <title>SIPAH Corporation · Arqueología e investigación patrimonial en Colombia</title>
   <meta name="description" content="SIPAH Corporation: investigación arqueológica, arqueología preventiva, planes de manejo y gestión patrimonial para obras públicas y privadas en Colombia. Sede en Itagüí, Antioquia.">
-  <meta name="theme-color" content="#F3EEE3">
+  <meta name="theme-color" content="#17150F">
   <meta name="color-scheme" content="light">
   <!-- TODO: reemplazar https://www.sipah.org por el dominio definitivo -->
   <link rel="canonical" href="https://www.sipah.org/">
@@ -250,6 +250,7 @@
               <span><strong>Lucy Tobón Ospina</strong>Directora, Museo Comunitario G.A.V.</span>
             </li>
           </ul>
+          <a class="mv__more" href="perfiles.html">Ver perfiles profesionales <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></a>
         </article>
       </div>
     </section>
@@ -771,22 +772,22 @@
           <h3 class="form__title" id="form-title">Solicitar cotización</h3>
           <div class="field">
             <label for="f-nombre">Nombre <span aria-hidden="true">*</span></label>
-            <input id="f-nombre" name="nombre" type="text" autocomplete="name" required minlength="2" aria-describedby="e-nombre">
+            <input id="f-nombre" name="nombre" type="text" autocomplete="name" autocapitalize="words" enterkeyhint="next" required minlength="2" aria-describedby="e-nombre">
             <p class="field__error" id="e-nombre" aria-live="polite"></p>
           </div>
           <div class="field">
             <label for="f-empresa">Empresa <span class="field__opt">(opcional)</span></label>
-            <input id="f-empresa" name="empresa" type="text" autocomplete="organization">
+            <input id="f-empresa" name="empresa" type="text" autocomplete="organization" autocapitalize="words" enterkeyhint="next">
           </div>
           <div class="field-row">
             <div class="field">
               <label for="f-correo">Correo <span aria-hidden="true">*</span></label>
-              <input id="f-correo" name="correo" type="email" autocomplete="email" inputmode="email" required aria-describedby="e-correo">
+              <input id="f-correo" name="correo" type="email" autocomplete="email" inputmode="email" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="next" required aria-describedby="e-correo">
               <p class="field__error" id="e-correo" aria-live="polite"></p>
             </div>
             <div class="field">
               <label for="f-telefono">Teléfono <span aria-hidden="true">*</span></label>
-              <input id="f-telefono" name="telefono" type="tel" autocomplete="tel" inputmode="tel" required aria-describedby="e-telefono">
+              <input id="f-telefono" name="telefono" type="tel" autocomplete="tel" inputmode="tel" enterkeyhint="next" required aria-describedby="e-telefono">
               <p class="field__error" id="e-telefono" aria-live="polite"></p>
             </div>
           </div>
@@ -842,6 +843,7 @@
         <p class="footer__head">Secciones</p>
         <ul>
           <li><a href="#nosotros">Nosotros</a></li>
+          <li><a href="perfiles.html">Perfiles profesionales</a></li>
           <li><a href="#servicios">Servicios</a></li>
           <li><a href="#proyectos">Hallazgos</a></li>
           <li><a href="#museo">Museo</a></li>
@@ -887,7 +889,7 @@
   </footer>
 
   <!-- ============ WHATSAPP FLOTANTE ============ -->
-  <a class="whatsapp" href="https://wa.me/573006345648?text=Hola%20SIPAH%2C%20quiero%20informaci%C3%B3n%20sobre%20un%20estudio%20arqueol%C3%B3gico." target="_blank" rel="noopener" aria-label="Escribir a SIPAH por WhatsApp">
+  <a class="whatsapp is-away" href="https://wa.me/573006345648?text=Hola%20SIPAH%2C%20quiero%20informaci%C3%B3n%20sobre%20un%20estudio%20arqueol%C3%B3gico." target="_blank" rel="noopener" aria-label="Escribir a SIPAH por WhatsApp">
     <svg aria-hidden="true"><use href="#i-whatsapp"/></svg>
   </a>
 
@@ -898,6 +900,7 @@
     <nav aria-label="Menú móvil">
       <ul class="drawer__links">
         <li><a href="#nosotros">Nosotros</a></li>
+        <li><a href="perfiles.html">Perfiles</a></li>
         <li><a href="#servicios">Servicios</a></li>
         <li><a href="#proyectos">Hallazgos</a></li>
         <li><a href="#museo">Museo</a></li>

@@ -1971,3 +1971,168 @@ body:has(.nav.is-hidden) .chapters-wrap { transform: translateY(calc(var(--nav-h
 .footer__logo { border-radius: 3px; }
 @media (min-width: 768px) { .footer__grid { grid-template-columns: 1fr 1fr; } }
 @media (min-width: 1100px) { .footer__grid { grid-template-columns: 1.5fr 1fr 1fr 1.2fr 1fr; } }
+
+/* ==========================================================================
+   27. PERFILES PROFESIONALES (perfiles.html)
+   Misma voz visual del inicio: rótulos de ficha, filetes en vez de tarjetas,
+   y cada dato del perfil con su fuente visible.
+   ========================================================================== */
+.phero { padding: calc(var(--nav-h) + var(--space-7)) 0 var(--space-8); }
+.phero__grid { display: grid; gap: var(--space-6); align-items: end; margin-top: var(--space-6); }
+.phero__title {
+  font-family: var(--font-serif);
+  font-optical-sizing: auto;
+  font-weight: 400;
+  font-size: clamp(2.5rem, 1.6rem + 4vw, 5rem);
+  line-height: 1;
+  letter-spacing: -0.025em;
+}
+.phero__lead { margin-top: var(--space-5); max-width: 52ch; font-size: var(--fs-md); color: var(--ink-2); }
+.phero__media img { width: 100%; border-radius: 4px; aspect-ratio: 3 / 2; object-fit: cover; }
+@media (min-width: 1024px) { .phero__grid { grid-template-columns: 1fr 1.1fr; gap: var(--space-8); } }
+
+/* Perfiles de dirección */
+.profiles { display: grid; gap: var(--space-8); }
+.profile { display: grid; gap: var(--space-5); padding-top: var(--space-5); border-top: 1px solid var(--line-strong); }
+.profile__photo { width: 140px; aspect-ratio: 1; border-radius: 4px; overflow: hidden; background: var(--sand-2); }
+/* Las fotos son recortes de afiches: se encuadra el rostro */
+.profile__photo img { width: 100%; height: 100%; object-fit: cover; object-position: 52% 22%; transform: scale(1.9); transform-origin: 52% 22%; }
+.profile__role { font-family: var(--font-mono); font-size: 0.75rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent-ink); }
+.profile__name { margin-top: var(--space-2); font-family: var(--font-serif); font-size: clamp(1.75rem, 1.3rem + 1.6vw, 2.5rem); line-height: 1.05; letter-spacing: -0.018em; }
+.profile__title { margin-top: var(--space-1); color: var(--stone); }
+.profile__facts { margin-top: var(--space-5); border-top: 1px solid var(--line); }
+.profile__facts li { display: grid; gap: var(--space-1); padding-block: var(--space-4); border-bottom: 1px solid var(--line); }
+.profile__facts p { font-size: var(--fs-base); line-height: 1.55; max-width: 62ch; }
+.profile__src {
+  justify-self: start;
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--font-mono); font-size: 0.6875rem; letter-spacing: 0.04em; text-transform: uppercase;
+  color: var(--stone); text-decoration: none;
+}
+a.profile__src { color: var(--accent-ink); min-height: 32px; }
+.profile__src .icon { width: 1em; height: 1em; }
+@media (min-width: 768px) {
+  .profile { grid-template-columns: 180px 1fr; gap: var(--space-7); }
+  .profile__photo { width: 100%; }
+}
+@media (min-width: 1200px) { .profiles { grid-template-columns: 1fr 1fr; gap: var(--space-7); } .profile { grid-template-columns: 150px 1fr; } }
+
+/* Áreas profesionales: tabla editorial numerada */
+.areas { border-top: 1px solid var(--line-strong); }
+.areas li { display: grid; grid-template-columns: 2.5rem 1fr; gap: var(--space-1) var(--space-4); padding-block: var(--space-5); border-bottom: 1px solid var(--line); }
+.areas__n { grid-row: span 2; font-family: var(--font-mono); font-size: 0.75rem; color: var(--accent-ink); padding-top: 0.5em; }
+.areas h3 { font-family: var(--font-serif); font-size: clamp(1.375rem, 1.1rem + 1vw, 1.875rem); line-height: 1.15; letter-spacing: -0.012em; }
+.areas p { color: var(--stone); }
+@media (min-width: 1024px) {
+  .areas li { grid-template-columns: 3rem minmax(0, 22rem) 1fr; align-items: baseline; }
+  .areas__n { grid-row: auto; }
+}
+
+/* Vigías en formación */
+.pvig { background: var(--olive-950); color: var(--sand); }
+.pvig__grid { display: grid; gap: var(--space-7); align-items: center; }
+.pvig__lead { margin-top: var(--space-4); color: rgb(243 238 227 / 0.85); font-size: var(--fs-md); max-width: 46ch; }
+.pvig__chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: var(--space-5); }
+.pvig__chips li { font-family: var(--font-mono); font-size: 0.75rem; padding: 5px 10px; border: 1px solid var(--line-light); border-radius: 3px; }
+.pvig__link { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; margin-top: var(--space-5); color: var(--gold-light); font-weight: 500; text-decoration: none; }
+.pvig__link .icon { transition: transform var(--dur-micro) var(--ease-out); }
+.pvig__media img { width: 100%; border-radius: 4px; }
+.pvig .fig { color: rgb(243 238 227 / 0.65); }
+.pvig .fig__n { color: var(--gold-light); }
+@media (hover: hover) and (pointer: fine) { .pvig__link:hover .icon { transform: translateX(3px); } }
+@media (min-width: 1024px) { .pvig__grid { grid-template-columns: 1fr 1.2fr; gap: var(--space-8); } }
+
+/* Vincúlate */
+.join { display: grid; gap: var(--space-5); }
+.join__actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.btn--ghost { --btn-bg: transparent; --btn-fg: var(--ink); border-color: var(--line-strong); }
+@media (hover: hover) and (pointer: fine) { .btn--ghost:hover { --btn-bg: var(--sand-2); } }
+@media (min-width: 1024px) { .join { grid-template-columns: 1fr auto; align-items: end; gap: var(--space-8); } }
+.mv__more { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; margin-top: var(--space-3); font-size: var(--fs-sm); font-weight: 500; color: var(--accent-ink); text-decoration: none; }
+.mv__more .icon { transition: transform var(--dur-micro) var(--ease-out); }
+@media (hover: hover) and (pointer: fine) { .mv__more:hover .icon { transform: translateX(3px); } }
+
+/* ==========================================================================
+   28. MÓVIL — que se sienta instalada, no "una web en el navegador"
+   (skill mobile-native). Cada regla lleva su porqué.
+   ========================================================================== */
+
+/* Sin destello gris al tocar; la respuesta táctil la dan los :active propios */
+html { -webkit-tap-highlight-color: transparent; }
+
+/* Respuesta inmediata al tocar: el navegador no espera un posible doble toque */
+a, button, [role="button"], label, summary, select { touch-action: manipulation; }
+
+/* Mantener presionado un control no debe seleccionar su texto ni abrir el menú
+   de copiar. Solo en controles: el texto de contenido sigue siendo seleccionable. */
+button, .btn, [role="button"], .filter, .nav__links a, .drawer__links a, .whatsapp, .project__open {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+/* Zonas seguras en horizontal (notch a los lados): el contenido no queda debajo */
+.container {
+  padding-left: max(var(--gutter), env(safe-area-inset-left, 0px));
+  padding-right: max(var(--gutter), env(safe-area-inset-right, 0px));
+}
+/* Como app instalada (PWA) la barra de estado tapa la parte superior */
+.nav { padding-top: env(safe-area-inset-top, 0px); height: calc(var(--nav-h) + env(safe-area-inset-top, 0px)); }
+
+/* Zonas táctiles de al menos 44px en pantallas táctiles (Apple HIG).
+   Con mouse se conserva el ritmo tipográfico compacto. */
+@media (pointer: coarse) {
+  .footer ul { gap: 0; }
+  .footer ul a,
+  .footer p a,
+  .contact__list a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+  }
+  .footer p { line-height: 1.4; }
+  .project__open,
+  a.profile__src,
+  .ghero__back,
+  .mv__more,
+  .news__all,
+  .voice__src,
+  .contact__route,
+  .sheet__source,
+  .pvig__link,
+  .story__link,
+  .chapters a,
+  .filter {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+  }
+}
+
+/* WhatsApp: en el inicio aparece después del hero para no tapar el indicador
+   de fotos; entra desde abajo y sale por el mismo camino. */
+.whatsapp { transition: transform 350ms var(--ease-out), opacity 250ms ease; }
+.whatsapp.is-away { transform: translateY(calc(100% + 24px)); opacity: 0; pointer-events: none; }
+/* Que no tape el último enlace del footer */
+.footer__bottom { padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px)); }
+@media (min-width: 768px) { .footer__bottom { padding-bottom: 0; } }
+
+/* Ficha de proyecto en móvil: hoja que ocupa el ancho y deja ver el fondo arriba */
+@media (max-width: 767px) {
+  .sheet__panel {
+    top: auto;
+    bottom: 0;
+    width: 100%;
+    max-height: calc(100svh - 48px);
+    border-radius: 16px 16px 0 0;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  .sheet__body { padding: var(--space-5) var(--space-4) var(--space-7); }
+  .sheet__actions .btn { width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) { .whatsapp { transition: opacity 200ms ease; } .whatsapp.is-away { transform: none; } }
+@media (pointer: coarse) {
+  /* Títulos-enlace de la galería: el padding en línea agranda el área táctil sin mover el texto */
+  .story__title a { padding-block: 8px; }
+  .footer__bottom > a { display: inline-flex; align-items: center; min-height: 44px; }
+}

@@ -636,6 +636,9 @@
   let lastY = window.scrollY;
   let ticking = false;
   let timelineDist = 0;
+  const themeMeta = document.querySelector('meta[name="theme-color"]');
+  let themeIsLight = null;
+  const waBtn = $('.whatsapp');
   let tlOvershoot = 0;
 
   function onScroll() {
@@ -658,7 +661,15 @@
     const heroEnd = heroEl.offsetHeight - vh;
     const navT = clamp((y - heroEnd) / 240);
     nav.style.setProperty('--nav-t', navT.toFixed(3));
-    nav.classList.toggle('is-compact', navT > 0.15);
+    const compact = navT > 0.15;
+    nav.classList.toggle('is-compact', compact);
+    // Móvil: la barra de estado toma el color de lo que hay arriba (foto oscura → arena)
+    if (themeMeta && compact !== themeIsLight) {
+      themeIsLight = compact;
+      themeMeta.content = compact ? '#F3EEE3' : '#17150F';
+    }
+    // WhatsApp aparece al terminar el hero para no tapar el indicador de fotos
+    if (waBtn) waBtn.classList.toggle('is-away', y < heroEnd - vh * 0.2);
     const delta = y - lastY;
     const navLocked = drawerOpen || nav.contains(document.activeElement);
     if (!navLocked && delta > 6 && y > vh * 0.6) nav.classList.add('is-hidden');
