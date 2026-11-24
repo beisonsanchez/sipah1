@@ -1,0 +1,1444 @@
+/* ==========================================================================
+   SIPAH Corporation · main.js
+   Vanilla JS: sin librerías. Movimiento con CSS transitions, Web Animations
+   API, IntersectionObserver y requestAnimationFrame.
+
+   01. Utilidades            07. Navbar activa       13. Toaster (Sonner)
+   02. IMAGES (inventario)   08. Revelados (IO)      14. Formulario
+   03. Galería + filtros     09. Proceso             15. Init
+   04. Lightbox (FLIP)       10. Contadores
+   05. Motor de scroll       11. Línea de tiempo
+   06. Navbar                12. Drawer (Vaul)
+   ========================================================================== */
+(() => {
+  'use strict';
+
+  /* 01. UTILIDADES ------------------------------------------------------ */
+  const $ = (s, el = document) => el.querySelector(s);
+  const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+  const clamp = (v, min = 0, max = 1) => Math.min(max, Math.max(min, v));
+  const motionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+  let reduced = motionQuery.matches;
+
+  const EASE_OUT = 'cubic-bezier(0.23, 1, 0.32, 1)';
+  const EASE_IN_OUT = 'cubic-bezier(0.77, 0, 0.175, 1)';
+
+  /* Bloqueo de scroll que compensa el ancho de la barra (sin saltos de layout) */
+  let lockCount = 0;
+  function lockScroll() {
+    if (lockCount++ > 0) return;
+    const sw = window.innerWidth - document.documentElement.clientWidth;
+    document.body.style.overflow = 'hidden';
+    if (sw > 0) document.body.style.paddingRight = `${sw}px`;
+  }
+  function unlockScroll() {
+    if (--lockCount > 0) return;
+    lockCount = 0;
+    document.body.style.overflow = '';
+    document.body.style.paddingRight = '';
+  }
+
+  /* Focus trap mínimo para diálogos */
+  function trapFocus(container, e) {
+    if (e.key !== 'Tab') return;
+    const nodes = $$('a[href], button:not([disabled]), input, select, textarea, [tabindex]:not([tabindex="-1"])', container)
+      .filter((n) => n.offsetParent !== null || n === document.activeElement);
+    if (!nodes.length) return;
+    const first = nodes[0];
+    const last = nodes[nodes.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  }
+
+  /* 01b. FÍSICA (Apple · Designing Fluid Interfaces) ------------------------
+     Spring con los dos parámetros de Apple: damping ratio (1 = sin rebote,
+     <1 = rebota) y response (segundos hasta llegar; no es una duración fija).
+     Es interrumpible: .to() reapunta desde el valor y la velocidad actuales. */
+  function createSpring({ value = 0, damping = 1, response = 0.4, precision = 0.001, onUpdate }) {
+    let x = value, v = 0, target = value, raf = 0, last = 0, onRest = null;
+    let k = 0, c = 0;
+    const config = (d, r) => { k = Math.pow((2 * Math.PI) / r, 2); c = (4 * Math.PI * d) / r; };
+    config(damping, response);
+    function step(now) {
+      const dt = Math.min(0.064, (now - last) / 1000);
+      last = now;
+      const n = Math.max(1, Math.ceil(dt / 0.004));
+      const h = dt / n;
+      for (let i = 0; i < n; i++) {
+        const a = -k * (x - target) - c * v;
+        v += a * h;
+        x += v * h;
+      }
+      if (Math.abs(v) < precision * 10 && Math.abs(x - target) < precision) {
+        x = target; v = 0; raf = 0;
+        onUpdate(x, v);
+        const cb = onRest; onRest = null;
+        if (cb) cb();
+        return;
+      }
+      onUpdate(x, v);
+      raf = requestAnimationFrame(step);
+    }
+    return {
+      to(t, opts = {}) {
+        target = t;
+        if (opts.velocity !== undefined) v = opts.velocity;
+        config(opts.damping ?? damping, opts.response ?? response);
+        onRest = opts.onRest || null;
+        if (!raf) { last = performance.now(); raf = requestAnimationFrame(step); }
+      },
+      set(val) { this.stop(); x = val; v = 0; target = val; onUpdate(x, v); },
+      stop() { cancelAnimationFrame(raf); raf = 0; onRest = null; },
+      get value() { return x; },
+      get velocity() { return v; },
+      get target() { return target; },
+      get active() { return raf !== 0; },
+    };
+  }
+
+  /* Proyección de impulso de Apple: dónde se detendría el gesto por inercia */
+  const project = (velocityPxPerS, rate = 0.998) => ((velocityPxPerS / 1000) * rate) / (1 - rate);
+
+  /* Rubber-band de Apple: cuanto más se pasa del límite, menos sigue al dedo */
+  const rubberband = (overshoot, dimension, constant = 0.55) =>
+    (overshoot * dimension * constant) / (dimension + constant * Math.abs(overshoot));
+
+  /* Historial corto de posiciones para medir la velocidad al soltar (px/s) */
+  function velocityTracker() {
+    let samples = [];
+    return {
+      reset() { samples = []; },
+      add(x, y) {
+        const t = performance.now();
+        samples.push({ x, y, t });
+        while (samples.length > 2 && t - samples[0].t > 100) samples.shift();
+      },
+      get() {
+        if (samples.length < 2) return { x: 0, y: 0 };
+        const a = samples[0], b = samples[samples.length - 1];
+        const dt = Math.max(1, b.t - a.t) / 1000;
+        return { x: (b.x - a.x) / dt, y: (b.y - a.y) / dt };
+      },
+    };
+  }
+
+  /* 02. IMAGES: inventario completo de /img-original (36 archivos) --------
+     section = dónde se muestra como imagen principal.
+     Todas las que no son logos aparecen además en la galería filtrable. */
+  const IMG = 'img-original/';
+  const IMAGES = [
+    // Arqueología
+    { src: IMG + 'colombia4_0d9ebaf0.jpg', category: 'arqueologia', w: 1280, h: 960, section: 'hero · proyectos · noticias', alt: 'Excavación de las tumbas prehispánicas de 2.000 años halladas al sur de Medellín' },
+    { src: IMG + 'hallazgo-vasijas-telemedellin.jpg', category: 'arqueologia', w: 580, h: 365, section: 'proyectos · noticias', alt: 'Vasijas cerámicas precolombinas halladas en la sede de Telemedellín' },
+    { src: IMG + 'investigador-768x1024.jpg', category: 'arqueologia', w: 768, h: 1024, section: 'servicios', alt: 'Investigador analizando muestras al microscopio en el laboratorio' },
+    { src: IMG + 'registro-inventario.jpg', category: 'arqueologia', w: 1272, h: 508, section: 'servicios', alt: 'Registro e inventario de piezas patrimoniales en el museo' },
+    { src: IMG + 'noticia-caracol.jpg', category: 'arqueologia', w: 1000, h: 562, section: 'proyectos · noticias', alt: 'Reportaje de Noticias Caracol sobre el hallazgo arqueológico de hace dos mil años en Itagüí' },
+    // Petroglifos
+    { src: IMG + 'petroglifo.jpeg', category: 'petroglifos', w: 720, h: 540, section: 'petroglifos · noticias', alt: 'Petroglifo con figuras talladas en roca en Itagüí' },
+    { src: IMG + 'Circulos-de-la-palabra-Petros-724x1024.jpg', category: 'petroglifos', w: 724, h: 1024, section: 'galeria', alt: 'Afiche Círculos de Palabra: arte rupestre en el Valle de Aburrá' },
+    // Museo
+    { src: IMG + 'Foto-Museo-1024x768.jpeg', category: 'museo', w: 1024, h: 768, section: 'museo', alt: 'Fachada del Museo Comunitario con la exposición Los Petroglifos, una historia tallada en roca' },
+    { src: IMG + '4-1-1024x1024.jpeg', category: 'museo', w: 1024, h: 1024, section: 'museo', alt: 'Motomuseo itinerante de SIPAH, triciclo rojo adaptado como museo móvil' },
+    // Comunidad y educación
+    { src: IMG + '2-1-1024x1024.jpeg', category: 'comunidad', w: 1024, h: 1024, section: 'museo', alt: 'Charla Museos y comunidad: estudiantes frente al Museo Comunitario' },
+    { src: IMG + 'familias-verdes.jpg', category: 'comunidad', w: 1600, h: 1067, section: 'hero · noticias', alt: 'Actividad de siembra Familias Verdes con la comunidad de El Rosario en el parque de los Petroglifos' },
+    { src: IMG + 'practicas.jpg', category: 'comunidad', w: 1000, h: 563, section: 'hero', alt: 'Recorrido de campo con estudiantes junto a un muro durante un estudio arqueológico' },
+    { src: IMG + 'tallerista.jpg', category: 'comunidad', w: 789, h: 618, section: 'museo', alt: 'Tallerista con niñas en una actividad de la ludoteca patrimonial' },
+    // Equipo
+    { src: IMG + '3-1-1024x1024.jpeg', category: 'equipo', w: 1024, h: 1024, section: 'nosotros', alt: 'Juan Pablo Díez Ramírez, director de la Corporación SIPAH' },
+    { src: IMG + '5-1024x1024.jpeg', category: 'equipo', w: 1024, h: 1024, section: 'nosotros', alt: 'Lucy Tobón Ospina, directora del Museo Comunitario Graciliano Arcila Vélez' },
+    { src: IMG + 'grupo-sipah-2018-ok-1024x683.jpg', category: 'equipo', w: 1024, h: 683, section: 'nosotros', alt: 'Equipo de SIPAH y Vigías del Patrimonio reunidos en 2018' },
+    { src: IMG + 'collage-sipah-1024x475.jpg', category: 'equipo', w: 1024, h: 475, section: 'galeria', alt: 'Collage de encuentros del equipo SIPAH con comunidades' },
+    // Publicaciones y eventos
+    { src: IMG + '1-1024x1024.jpeg', category: 'publicaciones', w: 1024, h: 1024, section: 'galeria', alt: 'Afiche del Mes del Patrimonio: conversatorio Diálogos de identidad cultural y riqueza patrimonial' },
+    { src: IMG + '19_05_21_conversa_internacional.jpeg', category: 'publicaciones', w: 861, h: 843, section: 'galeria', alt: 'Afiche del Conversatorio Internacional Ronda Latinoamericana de museos, 19 de mayo' },
+    { src: IMG + '6-1024x1024.jpeg', category: 'publicaciones', w: 1024, h: 1024, section: 'galeria', alt: 'Afiche del conversatorio Arqueología vs. urbanismo: miradas complementarias' },
+    { src: IMG + '7-1024x791.jpeg', category: 'publicaciones', w: 1024, h: 791, section: 'galeria', alt: 'Afiche del conversatorio Cerro El Picacho, patrimonio cultural y natural de Medellín' },
+    { src: IMG + '8-1024x1024.jpeg', category: 'publicaciones', w: 1024, h: 1024, section: 'galeria', alt: 'Afiche Septiembre, Mes del Patrimonio 2021: retos y desafíos del patrimonio' },
+    { src: IMG + 'circulo_de_la_palabra-724x1024.jpg', category: 'publicaciones', w: 724, h: 1024, section: 'galeria', alt: 'Afiche Círculos de Palabra: patrimonio ambiental y los petroglifos de Itagüí' },
+    { src: IMG + 'mar-y-selva.jpg', category: 'publicaciones', w: 1600, h: 568, section: 'publicaciones', alt: 'Ilustración Naturaleza, mar y cultura: el origen de lo que somos, Arboletes' },
+    { src: IMG + 'poster-icom.jpg', category: 'publicaciones', w: 900, h: 1348, section: 'museo', alt: 'Afiche del Día Internacional de los Museos 2023: Historias, mitos y patrimonio arqueológico de La Loma y El Rosario' },
+    { src: IMG + 'valor-agregado.jpg', category: 'publicaciones', w: 768, h: 1086, section: 'museo', alt: 'Afiche de la exposición temporal Valor Agregado en el Museo Comunitario G.A.V.' },
+    // Vigías y reconocimientos
+    { src: IMG + 'vigias-del-patrimonio-de-itagui-300x154.png', category: 'vigias', w: 300, h: 154, section: 'vigias', gallery: false, alt: 'Logo de los Vigías del Patrimonio de Itagüí' },
+    // Otras
+    { src: IMG + 'plan-padrino-1024x538.jpg', category: 'otras', w: 1024, h: 538, section: 'galeria', alt: 'Ilustración en tiza de un apretón de manos: Plan Padrino' },
+    // Logos y aliados (solo marquee, navbar, footer y museo; nunca en la galería)
+    { src: IMG + 'logo-sipah.png', category: 'logos', w: 148, h: 81, section: 'navbar', alt: 'Logo de SIPAH Corporation' },
+    { src: IMG + 'cropped-logo-color.png', category: 'logos', w: 292, h: 160, section: 'footer', alt: 'Logo a color de SIPAH Corporation' },
+    { src: IMG + 'logo-museo-gav-ok.png', category: 'logos', w: 179, h: 91, section: 'museo', alt: 'Logo del Museo Comunitario Graciliano Arcila Vélez' },
+    { src: IMG + 'MinCultura-300x95.png', category: 'logos', w: 300, h: 95, section: 'aliados', alt: 'Ministerio de Cultura de Colombia' },
+    { src: IMG + 'icanh.png', category: 'logos', w: 100, h: 38, section: 'aliados', alt: 'Instituto Colombiano de Antropología e Historia' },
+    { src: IMG + 'udea.png', category: 'logos', w: 100, h: 28, section: 'aliados', alt: 'Universidad de Antioquia' },
+    { src: IMG + 'RED-DE-MUSEOS.png', category: 'logos', w: 100, h: 40, section: 'aliados', alt: 'Red de Museos de Antioquia' },
+    { src: IMG + 'confiar.png', category: 'logos', w: 100, h: 33, section: 'aliados', alt: 'Confiar Cooperativa Financiera' },
+  ];
+  window.SIPAH_IMAGES = IMAGES; // útil para auditar desde la consola
+
+  const CATEGORY_LABELS = {
+    all: 'Todo',
+    arqueologia: 'Arqueología',
+    petroglifos: 'Petroglifos',
+    museo: 'Museo',
+    comunidad: 'Comunidad',
+    equipo: 'Equipo',
+    publicaciones: 'Publicaciones y eventos',
+    vigias: 'Vigías',
+    otras: 'Otras',
+  };
+
+  /* 03. GALERÍA + FILTROS --------------------------------------------------
+     Masonry con CSS columns. Al filtrar: FLIP de los ítems que se quedan
+     (ease-in-out, se mueven en pantalla) y fade corto de los que entran.
+     Es una acción repetida, así que el movimiento es breve (≤300ms). */
+  const galleryImages = IMAGES.filter((img) => img.category !== 'logos' && img.gallery !== false);
+  const galleryEl = $('[data-gallery]');
+  const filtersEl = $('[data-filters]');
+  const indicator = filtersEl && $('.filters__indicator', filtersEl);
+  const statusEl = $('[data-gallery-status]');
+  let activeFilter = 'all';
+
+  function renderGallery() {
+    if (!galleryEl) return; // la galería vive en galeria.html
+    const frag = document.createDocumentFragment();
+    galleryImages.forEach((img, i) => {
+      const li = document.createElement('li');
+      li.className = 'gallery__item';
+      li.dataset.category = img.category;
+      li.dataset.index = String(i);
+      li.innerHTML = `
+        <button class="gallery__btn" type="button" data-label="${CATEGORY_LABELS[img.category]}" aria-label="Ampliar imagen: ${img.alt}">
+          <img src="${img.src}" alt="${img.alt}" width="${img.w}" height="${img.h}" loading="lazy" decoding="async">
+        </button>`;
+      frag.appendChild(li);
+    });
+    galleryEl.appendChild(frag);
+
+    // Pills: solo categorías con imágenes
+    const counts = galleryImages.reduce((acc, img) => ((acc[img.category] = (acc[img.category] || 0) + 1), acc), {});
+    const cats = ['all', ...Object.keys(CATEGORY_LABELS).filter((c) => c !== 'all' && counts[c])];
+    cats.forEach((cat, i) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'filter';
+      b.dataset.filter = cat;
+      b.setAttribute('aria-pressed', String(cat === 'all'));
+      b.tabIndex = i === 0 ? 0 : -1;
+      const n = cat === 'all' ? galleryImages.length : counts[cat];
+      b.innerHTML = `${CATEGORY_LABELS[cat]}<span class="filter__count" aria-hidden="true">${n}</span>`;
+      b.setAttribute('aria-label', `${CATEGORY_LABELS[cat]}, ${n} imágenes`);
+      filtersEl.appendChild(b);
+    });
+  }
+
+  function moveIndicator(animate = true) {
+    const btn = $(`.filter[aria-pressed="true"]`, filtersEl);
+    if (!btn) return;
+    const total = filtersEl.scrollWidth;
+    indicator.style.width = `${total}px`;
+    const left = btn.offsetLeft;
+    const right = total - (btn.offsetLeft + btn.offsetWidth);
+    indicator.classList.toggle('no-anim', !animate);
+    indicator.style.clipPath = `inset(0 ${right}px 0 ${left}px round 999px)`;
+  }
+
+  function applyFilter(cat) {
+    if (cat === activeFilter) return;
+    activeFilter = cat;
+    const items = $$('.gallery__item', galleryEl);
+    const first = new Map();
+    if (!reduced) items.forEach((li) => { if (!li.hidden) first.set(li, li.getBoundingClientRect()); });
+
+    let shown = 0;
+    items.forEach((li) => {
+      const match = cat === 'all' || li.dataset.category === cat;
+      li.hidden = !match;
+      if (match) shown++;
+    });
+
+    statusEl.textContent = `Mostrando ${shown} ${shown === 1 ? 'imagen' : 'imágenes'}${cat === 'all' ? '' : ' de ' + CATEGORY_LABELS[cat]}.`;
+    if (reduced) return;
+
+    items.forEach((li) => {
+      if (li.hidden) return;
+      const last = li.getBoundingClientRect();
+      const prev = first.get(li);
+      if (prev) {
+        const dx = prev.left - last.left;
+        const dy = prev.top - last.top;
+        if (Math.abs(dx) < 1 && Math.abs(dy) < 1) return;
+        li.animate(
+          [{ transform: `translate(${dx}px, ${dy}px)` }, { transform: 'none' }],
+          { duration: 300, easing: EASE_IN_OUT }
+        );
+      } else {
+        li.animate(
+          [{ opacity: 0, transform: 'scale(0.98)' }, { opacity: 1, transform: 'none' }],
+          { duration: 220, easing: EASE_OUT, fill: 'backwards' }
+        );
+      }
+    });
+  }
+
+  function initFilters() {
+    if (!filtersEl) return;
+    filtersEl.addEventListener('click', (e) => {
+      const btn = e.target.closest('.filter');
+      if (!btn) return;
+      $$('.filter', filtersEl).forEach((b) => {
+        const on = b === btn;
+        b.setAttribute('aria-pressed', String(on));
+        b.tabIndex = on ? 0 : -1;
+      });
+      moveIndicator(true);
+      btn.scrollIntoView({ inline: 'nearest', block: 'nearest', behavior: reduced ? 'auto' : 'smooth' });
+      applyFilter(btn.dataset.filter);
+    });
+    // Toolbar con roving tabindex: flechas para moverse entre filtros
+    filtersEl.addEventListener('keydown', (e) => {
+      if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(e.key)) return;
+      const btns = $$('.filter', filtersEl);
+      const i = btns.indexOf(document.activeElement);
+      if (i < 0) return;
+      e.preventDefault();
+      let next = i;
+      if (e.key === 'ArrowRight') next = (i + 1) % btns.length;
+      if (e.key === 'ArrowLeft') next = (i - 1 + btns.length) % btns.length;
+      if (e.key === 'Home') next = 0;
+      if (e.key === 'End') next = btns.length - 1;
+      btns[i].tabIndex = -1;
+      btns[next].tabIndex = 0;
+      btns[next].focus();
+    });
+    moveIndicator(false);
+    // Recalcular cuando carguen las fuentes (cambian los anchos de las pills)
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => moveIndicator(false));
+    window.addEventListener('resize', () => moveIndicator(false), { passive: true });
+  }
+
+  /* 04. LIGHTBOX con transición de imagen compartida (FLIP) ---------------
+     La miniatura crece hasta su tamaño final desde su posición exacta.
+     Las miniaturas conservan su proporción (masonry), así que el escalado
+     es uniforme y la imagen no se deforma. */
+  const lb = $('[data-lightbox]');
+  const lbImg = $('[data-lb-img]', lb);
+  const lbCaption = $('[data-lb-caption]', lb);
+  let lbList = [];      // índices de galleryImages visibles con el filtro activo
+  let lbPos = 0;        // posición dentro de lbList
+  let lbOpen = false;
+  let lbBusy = false;
+  let lbLastFocus = null;
+  let lbSource = null;  // { index, el, strip } cuando se abre desde la tira del hero
+
+  function thumbFor(index) {
+    return $(`.gallery__item[data-index="${index}"] img`, galleryEl);
+  }
+
+  function fitRect(img) {
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const maxW = vw * (vw < 768 ? 0.94 : 0.86);
+    const maxH = vh * 0.76;
+    const ratio = img.w / img.h;
+    let w = maxW;
+    let h = w / ratio;
+    if (h > maxH) { h = maxH; w = h * ratio; }
+    return { left: (vw - w) / 2, top: (vh - h) / 2 - 12, width: w, height: h };
+  }
+
+  function placeImage(index) {
+    const img = galleryImages[index];
+    const r = fitRect(img);
+    lbImg.src = img.src;
+    lbImg.alt = img.alt;
+    lbImg.width = img.w;
+    lbImg.height = img.h;
+    Object.assign(lbImg.style, { left: `${r.left}px`, top: `${r.top}px`, width: `${r.width}px`, height: `${r.height}px` });
+    lbCaption.textContent = `${img.alt} · ${lbPos + 1} / ${lbList.length}`;
+    // Precarga de vecinas para que la navegación sea instantánea
+    [-1, 1].forEach((d) => {
+      const n = galleryImages[lbList[(lbPos + d + lbList.length) % lbList.length]];
+      if (n) { const p = new Image(); p.src = n.src; }
+    });
+    return r;
+  }
+
+  function flipFrom(rect, to) {
+    const sx = rect.width / to.width;
+    const sy = rect.height / to.height;
+    return `translate(${rect.left - to.left}px, ${rect.top - to.top}px) scale(${sx}, ${sy})`;
+  }
+
+  function openLightbox(index, sourceEl = null) {
+    if (lbOpen || lbBusy) return;
+    lbList = $$('.gallery__item:not([hidden])', galleryEl).map((li) => Number(li.dataset.index));
+    // Si la imagen está oculta por el filtro activo (p. ej. desde la tira), navega por todo el archivo
+    if (!lbList.includes(index)) lbList = galleryImages.map((_, i) => i);
+    lbSource = sourceEl ? { index, el: sourceEl } : null;
+    lbPos = Math.max(0, lbList.indexOf(index));
+    lbLastFocus = document.activeElement;
+    lbOpen = true;
+    lbBusy = true;
+
+    lb.hidden = false;
+    lockScroll();
+    const to = placeImage(index);
+    const thumb = sourceEl || thumbFor(index);
+    const from = thumb ? thumb.getBoundingClientRect() : null;
+
+    requestAnimationFrame(() => lb.classList.add('is-open'));
+    $('.lightbox__close', lb).focus({ preventScroll: true });
+
+    if (reduced || !from) {
+      lbImg.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 200, easing: 'ease' }).finished.then(() => (lbBusy = false));
+      return;
+    }
+    if (thumb) thumb.style.visibility = 'hidden';
+    lbImg.animate(
+      [{ transform: flipFrom(from, to), borderRadius: '10px' }, { transform: 'none' }],
+      { duration: 420, easing: EASE_OUT }
+    ).finished.then(() => {
+      if (thumb) thumb.style.visibility = '';
+      lbBusy = false;
+    });
+  }
+
+  /* Estado visual de la imagen del visor: desplazamiento del centro (cx, cy)
+     y escala s alrededor del centro. transform-origin es 0 0 (por el FLIP),
+     así que compensamos la escala para que encoja hacia su centro. */
+  const lbBackdrop = $('.lightbox__backdrop', lb);
+  const ID_STATE = { cx: 0, cy: 0, s: 1 };
+  function applyLbState({ cx, cy, s }) {
+    const W = lbImg.offsetWidth, H = lbImg.offsetHeight;
+    lbImg.style.transform = `translate(${cx + ((1 - s) * W) / 2}px, ${cy + ((1 - s) * H) / 2}px) scale(${s})`;
+  }
+  const lerpState = (a, b, t) => ({ cx: a.cx + (b.cx - a.cx) * t, cy: a.cy + (b.cy - a.cy) * t, s: a.s + (b.s - a.s) * t });
+
+  /* Anima la imagen de un estado a otro con un spring (Apple: damping 1, response 0.35).
+     velocityY (px/s) es la velocidad del dedo al soltar: se normaliza por la distancia
+     que queda para que el resorte arranque exactamente a la velocidad del gesto. */
+  function springLbState(from, to, { velocityY = 0, response = 0.35, onFrame, onRest }) {
+    const dist = to.cy - from.cy;
+    const v0 = Math.abs(dist) > 1 ? velocityY / dist : 0;
+    const sp = createSpring({
+      value: 0, damping: 1, response,
+      onUpdate: (t) => { applyLbState(lerpState(from, to, t)); if (onFrame) onFrame(t); },
+    });
+    sp.to(1, { velocity: v0, onRest });
+    return sp;
+  }
+
+  /* Cierre: vuelve a su miniatura desde donde esté (también a mitad de un arrastre) */
+  function closeLightbox(fromState = ID_STATE, velocityY = 0) {
+    if (!lbOpen || lbBusy) return;
+    lbBusy = true;
+    const index = lbList[lbPos];
+    // Vuelve a su origen: la foto de la tira si no se navegó; si no, la miniatura de la galería
+    const thumb = lbSource && lbSource.index === index ? lbSource.el : thumbFor(index);
+    const from = thumb ? thumb.getBoundingClientRect() : null;
+    const visible = from && from.bottom > 0 && from.top < window.innerHeight && from.width > 0;
+    const startBackdrop = Number(lbBackdrop.style.opacity || 1);
+
+    lb.classList.remove('is-open', 'is-dragging');
+    lb.classList.add('is-closing');
+
+    const finish = () => {
+      if (thumb) thumb.style.visibility = '';
+      lb.hidden = true;
+      lb.classList.remove('is-closing');
+      lbImg.removeAttribute('src');
+      lbImg.style.transform = '';
+      lbImg.style.opacity = '';
+      lbBackdrop.style.opacity = '';
+      lbBackdrop.style.transition = '';
+      lbOpen = false;
+      lbSource = null;
+      lbBusy = false;
+      unlockScroll();
+      const btn = thumb && thumb.closest('button');
+      (btn || lbLastFocus)?.focus({ preventScroll: true });
+    };
+
+    if (reduced) {
+      lbImg.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 200, easing: 'ease', fill: 'forwards' })
+        .finished.then((a) => { a.cancel(); finish(); });
+      return;
+    }
+
+    const base = { left: parseFloat(lbImg.style.left), top: parseFloat(lbImg.style.top), w: lbImg.offsetWidth, h: lbImg.offsetHeight };
+    let target;
+    if (visible) {
+      thumb.style.visibility = 'hidden';
+      target = {
+        cx: from.left + from.width / 2 - (base.left + base.w / 2),
+        cy: from.top + from.height / 2 - (base.top + base.h / 2),
+        s: from.width / base.w,
+      };
+    } else {
+      // Miniatura fuera de pantalla: sigue cayendo en la dirección del gesto y se desvanece
+      target = { cx: fromState.cx, cy: fromState.cy + window.innerHeight * 0.5, s: fromState.s * 0.9 };
+    }
+    lbBackdrop.style.transition = 'none';
+    springLbState(fromState, target, {
+      velocityY,
+      onFrame: (t) => {
+        lbBackdrop.style.opacity = String(startBackdrop * (1 - t));
+        if (!visible) lbImg.style.opacity = String(1 - t);
+      },
+      onRest: finish,
+    });
+  }
+
+  /* source: 'key' → sin animación (acción de teclado, se repite mucho)
+             'button' | 'swipe' → deslizamiento corto en la dirección del gesto */
+  function navigate(dir, source = 'button', fromX = 0) {
+    if (!lbOpen || lbBusy || lbList.length < 2) return;
+    lbPos = (lbPos + dir + lbList.length) % lbList.length;
+    placeImage(lbList[lbPos]);
+    if (source === 'key' || reduced) { lbImg.style.transform = ''; return; }
+    const startX = source === 'swipe' ? -dir * 40 : dir * 24;
+    lbImg.animate(
+      [{ transform: `translateX(${startX}px)`, opacity: 0.4 }, { transform: 'none', opacity: 1 }],
+      { duration: 220, easing: EASE_OUT }
+    );
+    lbImg.style.transform = '';
+  }
+
+  function initLightbox() {
+    if (!galleryEl || !lb) return;
+    galleryEl.addEventListener('click', (e) => {
+      const btn = e.target.closest('.gallery__btn');
+      if (!btn) return;
+      openLightbox(Number(btn.parentElement.dataset.index));
+    });
+    $$('[data-lb-close]', lb).forEach((el) => el.addEventListener('click', () => closeLightbox()));
+    $('[data-lb-prev]', lb).addEventListener('click', () => navigate(-1));
+    $('[data-lb-next]', lb).addEventListener('click', () => navigate(1));
+
+    lb.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') { e.preventDefault(); closeLightbox(); }
+      else if (e.key === 'ArrowRight') { e.preventDefault(); navigate(1, 'key'); }
+      else if (e.key === 'ArrowLeft') { e.preventDefault(); navigate(-1, 'key'); }
+      else trapFocus(lb, e);
+    });
+
+    /* Gestos sobre la imagen (como Fotos de iOS):
+       · horizontal → pasar de foto (por distancia o velocidad)
+       · hacia abajo → la foto sigue al dedo 1:1, encoge y el fondo se aclara;
+         al soltar se proyecta el impulso: cierra o vuelve con un spring que
+         hereda la velocidad del dedo. Hacia arriba: rubber-band.
+       Se decide el eje tras 10px de histéresis. */
+    const tracker = velocityTracker();
+    let sx = 0, sy = 0, dx = 0, dy = 0, axis = null, pid = null, state = ID_STATE, backSpring = null;
+    lbImg.addEventListener('pointerdown', (e) => {
+      if (lbBusy || pid !== null) return; // ignora un segundo dedo
+      if (backSpring) backSpring.stop(); // agarrar a mitad del regreso: continúa desde ahí
+      pid = e.pointerId; sx = e.clientX - (state.cx || 0); sy = e.clientY - (state.cy > 0 ? state.cy : 0);
+      dx = 0; dy = 0; axis = null;
+      tracker.reset(); tracker.add(e.clientX, e.clientY);
+      lbImg.setPointerCapture(e.pointerId);
+    });
+    lbImg.addEventListener('pointermove', (e) => {
+      if (e.pointerId !== pid) return;
+      dx = e.clientX - sx; dy = e.clientY - sy;
+      tracker.add(e.clientX, e.clientY);
+      if (!axis) {
+        if (Math.hypot(dx, dy) < 10) return;
+        axis = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y';
+        if (axis === 'y') { lb.classList.add('is-dragging'); lbBackdrop.style.transition = 'none'; }
+      }
+      if (axis === 'x') {
+        lbImg.style.transform = `translateX(${dx}px)`;
+      } else {
+        const vh = window.innerHeight;
+        const down = Math.max(0, dy);
+        const cy = dy >= 0 ? dy : rubberband(dy, vh);
+        const s = 1 - clamp(down / vh) * 0.4;
+        state = { cx: dx, cy, s };
+        applyLbState(state);
+        lbBackdrop.style.opacity = String(1 - clamp(down / (vh * 0.6)) * 0.85);
+      }
+    });
+    const end = (e) => {
+      if (e.pointerId !== pid) return;
+      pid = null;
+      const v = tracker.get();
+      if (axis === 'x') {
+        if (Math.abs(dx) > 60 || (Math.abs(v.x) > 400 && Math.abs(dx) > 10)) {
+          navigate(dx < 0 ? 1 : -1, 'swipe');
+        } else if (dx !== 0) {
+          lbImg.animate([{ transform: `translateX(${dx}px)` }, { transform: 'none' }], { duration: 200, easing: EASE_OUT });
+          lbImg.style.transform = '';
+        }
+      } else if (axis === 'y') {
+        // ¿Dónde acabaría por inercia? Si pasa del 18% de la pantalla, cierra
+        const projected = state.cy + project(v.y, 0.99);
+        if (dy > 0 && projected > window.innerHeight * 0.18) {
+          const from = state; state = ID_STATE;
+          closeLightbox(from, v.y);
+        } else {
+          lb.classList.remove('is-dragging');
+          const from = state;
+          const startOpacity = Number(lbBackdrop.style.opacity || 1);
+          backSpring = springLbState(from, ID_STATE, {
+            velocityY: v.y, response: 0.3,
+            onFrame: (t) => {
+              state = lerpState(from, ID_STATE, t);
+              lbBackdrop.style.opacity = String(startOpacity + (1 - startOpacity) * t);
+            },
+            onRest: () => { state = ID_STATE; lbImg.style.transform = ''; lbBackdrop.style.opacity = ''; lbBackdrop.style.transition = ''; backSpring = null; },
+          });
+        }
+      }
+      axis = null;
+    };
+    lbImg.addEventListener('pointerup', end);
+    lbImg.addEventListener('pointercancel', end);
+
+    window.addEventListener('resize', () => { if (lbOpen && !lbBusy) placeImage(lbList[lbPos]); }, { passive: true });
+  }
+
+  /* 05. MOTOR DE SCROLL ----------------------------------------------------
+     Un único listener pasivo + un rAF por frame para: barra de progreso,
+     navbar, parallax del hero, línea de tiempo y revelado del petroglifo. */
+  const progressBar = $('.scroll-progress span');
+  const nav = $('[data-nav]');
+  const heroEl = $('[data-hero]');
+  const heroImgs = $$('.hero__img', heroEl);
+  const heroBars = $$('[data-hero-bars] span', heroEl);
+  const heroCount = $('[data-hero-count]', heroEl);
+  const heroLabel = $('[data-hero-label]', heroEl);
+  const heroScene = $('[data-hero-scene]', heroEl);
+  let heroFrame = 0;
+
+  /* Cambio de frase: la saliente se va y la nueva entra en la dirección del
+     scroll (bajar → de abajo hacia arriba; subir → al revés). Blur corto para
+     fundir ambos estados; se cancela si llega otro cambio a mitad. */
+  function swapScene(text, dir) {
+    heroScene.getAnimations().forEach((a) => a.cancel());
+    if (reduced) { heroScene.textContent = text; return; }
+    const out = heroScene.animate(
+      [{ opacity: 1, transform: 'none', filter: 'blur(0)' }, { opacity: 0, transform: `translateY(${-10 * dir}px)`, filter: 'blur(4px)' }],
+      { duration: 150, easing: EASE_OUT, fill: 'forwards' }
+    );
+    out.onfinish = () => {
+      heroScene.textContent = text;
+      out.cancel();
+      heroScene.animate(
+        [{ opacity: 0, transform: `translateY(${12 * dir}px)`, filter: 'blur(4px)' }, { opacity: 1, transform: 'none', filter: 'blur(0)' }],
+        { duration: 350, easing: EASE_OUT }
+      );
+    };
+  }
+  const timeline = $('[data-timeline]');
+  const track = $('[data-timeline-track]');
+  const timelineBar = $('[data-timeline-bar]');
+  let lastY = window.scrollY;
+  let ticking = false;
+  let timelineDist = 0;
+  let tlOvershoot = 0;
+
+  function onScroll() {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(update);
+  }
+
+  function update() {
+    ticking = false;
+    const y = window.scrollY;
+    const vh = window.innerHeight;
+    const max = document.documentElement.scrollHeight - vh;
+
+    // Barra de progreso (lineal, sin transición: sigue al scroll exacto)
+    progressBar.style.transform = `scaleX(${max > 0 ? y / max : 0})`;
+
+    // Navbar: compacta tras 40px; se oculta al bajar y vuelve al subir
+    // Dentro de la secuencia del hero la barra sigue transparente sobre la foto
+    const heroEnd = heroEl.offsetHeight - vh;
+    const navT = clamp((y - heroEnd) / 240);
+    nav.style.setProperty('--nav-t', navT.toFixed(3));
+    nav.classList.toggle('is-compact', navT > 0.15);
+    const delta = y - lastY;
+    const navLocked = drawerOpen || nav.contains(document.activeElement);
+    if (!navLocked && delta > 6 && y > vh * 0.6) nav.classList.add('is-hidden');
+    else if (delta < -6 || y < vh * 0.6 || navLocked) nav.classList.remove('is-hidden');
+    if (Math.abs(delta) > 6) lastY = y;
+
+    // Parallax del hero (factor 0.3) solo mientras es visible
+    // Secuencia del hero: cada tramo de scroll muestra una foto distinta
+    if (y <= heroEl.offsetHeight) {
+      const n = heroImgs.length;
+      const p = heroEnd > 0 ? clamp(y / heroEnd) : 0;
+      const frame = Math.min(n - 1, Math.floor(p * n));
+      // Barras: la de la foto actual se llena según el avance dentro de su tramo
+      heroBars.forEach((bar, i) => { bar.style.transform = `scaleX(${clamp(p * n - i)})`; });
+      // Acercamiento ligado al scroll: cada foto se asienta de 1.08 a 1 durante su tramo
+      if (!reduced) {
+        heroImgs.forEach((img, i) => {
+          const local = clamp(p * n - i);
+          img.style.transform = `scale(${(1.08 - 0.08 * local).toFixed(4)})`;
+        });
+      }
+      if (frame !== heroFrame) {
+        const dir = frame > heroFrame ? 1 : -1;
+        heroImgs[heroFrame].classList.remove('is-active');
+        heroImgs[frame].classList.add('is-active');
+        heroFrame = frame;
+        heroCount.textContent = String(frame + 1).padStart(2, '0');
+        heroLabel.textContent = heroImgs[frame].dataset.label;
+        swapScene(heroImgs[frame].dataset.scene, dir);
+      }
+    }
+
+    // Línea de tiempo horizontal
+    if (timeline.classList.contains('is-pinned')) {
+      const rect = timeline.getBoundingClientRect();
+      const total = timeline.offsetHeight - vh;
+      const p = clamp(-rect.top / total);
+      // tlOvershoot: desplazamiento elástico extra cuando se arrastra más allá de los extremos
+      track.style.transform = `translate3d(${-p * timelineDist + tlOvershoot}px, 0, 0)`;
+      timelineBar.style.transform = `scaleX(${p})`;
+    }
+  }
+
+  /* 06. NAVBAR (aria-current según la sección visible) -------------------- */
+  function initActiveNav() {
+    const links = $$('.nav__links a');
+    const map = new Map(links.map((a) => [a.getAttribute('href').slice(1), a]));
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((en) => {
+        if (!en.isIntersecting) return;
+        links.forEach((a) => a.removeAttribute('aria-current'));
+        const a = map.get(en.target.id);
+        if (a) a.setAttribute('aria-current', 'true');
+      });
+    }, { rootMargin: '-45% 0px -50% 0px' });
+    map.forEach((_, id) => { const s = document.getElementById(id); if (s) io.observe(s); });
+  }
+
+  /* 08. REVELADOS con IntersectionObserver (threshold 0.2, una sola vez) --- */
+  function initReveals() {
+    const groups = $$('[data-reveal-group]');
+    groups.forEach((g) => [...g.children].forEach((c, i) => c.style.setProperty('--i', String(i))));
+    const els = [...$$('[data-reveal]'), ...groups];
+
+    if (!('IntersectionObserver' in window)) { els.forEach(finish); return; }
+
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((en) => {
+        // Elementos más altos que el viewport: basta con que ocupen un 30% de pantalla
+        const enough = en.intersectionRatio >= 0.2 || en.intersectionRect.height > window.innerHeight * 0.3;
+        if (!en.isIntersecting || !enough) return;
+        const el = en.target;
+        io.unobserve(el);
+        el.classList.add('is-in');
+        const n = el.hasAttribute('data-reveal-group') ? el.children.length : 1;
+        setTimeout(() => finish(el), 450 + n * 50 + 60);
+      });
+    }, { threshold: [0, 0.1, 0.2] });
+    els.forEach((el) => io.observe(el));
+
+    // Al terminar, retiramos los atributos para que el componente recupere sus hover
+    function finish(el) {
+      el.removeAttribute('data-reveal');
+      el.removeAttribute('data-reveal-group');
+      el.classList.remove('is-in');
+    }
+  }
+
+  /* 09. PROCESO: la línea se dibuja y los pasos se activan en secuencia ---- */
+  function initProcess() {
+    const el = $('[data-process]');
+    const io = new IntersectionObserver(([en]) => {
+      if (en.isIntersecting) { el.classList.add('is-in'); io.disconnect(); }
+    }, { threshold: 0.4 });
+    io.observe(el);
+  }
+
+  /* 10. CONTADORES ------------------------------------------------------ */
+  /* Odómetro: cada dígito es una columna 0–9 que rueda hasta su valor, como un
+     contador mecánico. Las cifras menos significativas dan más vueltas, y las
+     columnas arrancan en cascada de izquierda a derecha. Solo transform. */
+  function initCounters() {
+    const nums = $$('[data-count]');
+    const fmt = new Intl.NumberFormat('es-CO');
+    nums.forEach((el) => {
+      const text = fmt.format(Number(el.dataset.count));
+      const digits = [...text].filter((ch) => /\d/.test(ch)).length;
+      let fromRight = digits;
+      el.setAttribute('aria-hidden', 'true');
+      const sr = document.createElement('span');
+      sr.className = 'sr-only';
+      sr.textContent = text;
+      el.before(sr);
+      el.textContent = '';
+      el.classList.add('odo');
+      [...text].forEach((ch) => {
+        if (!/\d/.test(ch)) {
+          const sep = document.createElement('span');
+          sep.className = 'odo__sep';
+          sep.textContent = ch;
+          el.appendChild(sep);
+          return;
+        }
+        fromRight--;
+        const cycles = fromRight === 0 ? 2 : 1; // la última cifra gira más
+        const col = document.createElement('span');
+        col.className = 'odo__col';
+        const strip = document.createElement('span');
+        strip.className = 'odo__strip';
+        strip.textContent = '0123456789'.repeat(cycles + 1).split('').join('\n');
+        strip.dataset.final = String(cycles * 10 + Number(ch));
+        col.appendChild(strip);
+        el.appendChild(col);
+      });
+    });
+
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((en) => {
+        if (!en.isIntersecting) return;
+        io.unobserve(en.target);
+        $$('.odo__strip', en.target).forEach((strip, i) => {
+          if (reduced) strip.style.transition = 'none';
+          else strip.style.transitionDelay = `${i * 70}ms`;
+          strip.style.transform = `translateY(${-Number(strip.dataset.final)}em)`;
+        });
+      });
+    }, { threshold: 0.5 });
+    nums.forEach((n) => io.observe(n));
+  }
+
+  /* 11. LÍNEA DE TIEMPO: activa el modo sticky cuando hay espacio ---------- */
+  function setupTimeline() {
+    const canPin = !reduced && CSS.supports('position', 'sticky');
+    timeline.classList.toggle('is-pinned', canPin);
+    if (!canPin) {
+      timeline.style.height = '';
+      track.style.transform = '';
+      return;
+    }
+    timelineDist = Math.max(0, track.scrollWidth - document.documentElement.clientWidth);
+    if (timelineDist === 0) {
+      timeline.classList.remove('is-pinned');
+      timeline.style.height = '';
+      return;
+    }
+    timeline.style.height = `${timelineDist + window.innerHeight}px`;
+    update();
+  }
+
+  /* 11b. LÍNEA DE TIEMPO ARRASTRABLE ---------------------------------------
+     El arrastre horizontal mueve el scroll real de la página (fuente única de
+     verdad), así gesto y scroll nunca se contradicen. Al soltar: proyección de
+     impulso de Apple → se elige la era más cercana a donde "caería" → spring
+     con la velocidad del dedo. Más allá de los extremos: rubber-band. */
+  function initTimelineDrag() {
+    const tracker = velocityTracker();
+    let pid = null, startX = 0, startT = 0, dragging = false, spring = null;
+
+    const geometry = () => {
+      const top = timeline.getBoundingClientRect().top + window.scrollY;
+      const total = timeline.offsetHeight - window.innerHeight;
+      return { top, total };
+    };
+    const currentT = () => {
+      const { top, total } = geometry();
+      return clamp((window.scrollY - top) / total) * timelineDist;
+    };
+    // Lleva la línea a la posición T (px de desplazamiento horizontal)
+    const setT = (T) => {
+      const { top, total } = geometry();
+      const inside = clamp(T, 0, timelineDist);
+      const over = T - inside; // >0 pasado del final, <0 antes del inicio
+      tlOvershoot = over === 0 ? 0 : -rubberband(over, window.innerWidth);
+      window.scrollTo({ top: top + (inside / timelineDist) * total, behavior: 'instant' });
+      update();
+    };
+    const stops = () => {
+      const pad = parseFloat(getComputedStyle(track).paddingLeft) || 0;
+      return $$('.era', track).map((el) => clamp(el.offsetLeft - pad, 0, timelineDist));
+    };
+
+    track.addEventListener('pointerdown', (e) => {
+      if (!timeline.classList.contains('is-pinned') || pid !== null || e.button > 0) return;
+      if (spring) spring.stop(); // agarrar a mitad del movimiento: sigue desde ahí
+      pid = e.pointerId; startX = e.clientX; dragging = false;
+      startT = currentT() - tlOvershoot;
+      tracker.reset(); tracker.add(e.clientX, 0);
+    });
+    track.addEventListener('pointermove', (e) => {
+      if (e.pointerId !== pid) return;
+      const dx = e.clientX - startX;
+      tracker.add(e.clientX, 0);
+      if (!dragging) {
+        if (Math.abs(dx) < 10) return; // histéresis antes de comprometer el eje
+        dragging = true;
+        track.setPointerCapture(e.pointerId);
+        timeline.classList.add('is-dragging');
+      }
+      setT(startT - dx);
+    });
+    const end = (e) => {
+      if (e.pointerId !== pid) return;
+      pid = null;
+      if (!dragging) return;
+      dragging = false;
+      timeline.classList.remove('is-dragging');
+      const v = -tracker.get().x; // velocidad del desplazamiento (px/s)
+      const from = currentT() - tlOvershoot;
+      const projected = from + project(v);
+      const s = stops();
+      const target = s.reduce((best, x) => (Math.abs(x - projected) < Math.abs(best - projected) ? x : best), s[0]);
+      spring = createSpring({ value: from, damping: 1, response: 0.5, precision: 0.5, onUpdate: (T) => setT(T) });
+      spring.to(target, { velocity: v, onRest: () => { tlOvershoot = 0; update(); } });
+    };
+    track.addEventListener('pointerup', end);
+    track.addEventListener('pointercancel', end);
+    // Si el usuario vuelve a hacer scroll, cede el control de inmediato
+    ['wheel', 'touchstart', 'keydown'].forEach((ev) =>
+      window.addEventListener(ev, () => { if (spring && spring.active && pid === null) { spring.stop(); tlOvershoot = 0; update(); } }, { passive: true })
+    );
+  }
+
+  /* 11c. FICHA DE PROYECTO: la tarjeta se expande ----------------------------
+     Continuidad espacial (Apple): la ficha nace de la tarjeta y vuelve a ella.
+     El panel final se escala de forma uniforme (sin deformar texto ni foto)
+     desde el tamaño de la tarjeta, y un clip-path recorta lo que sobra, así la
+     silueta coincide exactamente con la tarjeta al inicio. Todo lo mueve un
+     único spring (t: 0 = tarjeta, 1 = ficha): cerrar a mitad de la apertura
+     invierte el movimiento desde donde va, sin saltos.
+     Datos reales: noticias de corporacionsipah.org y los artículos de prensa
+     originales sobre cada hallazgo. "url" es el enlace directo al artículo del
+     medio (no a la página de SIPAH) y "source" el nombre que se muestra. */
+  const PROJECTS = {
+    tumbas: {
+      meta: 'Área metropolitana de Medellín · 2.000 años',
+      title: 'Hallan 3 tumbas de 2.000 años de antigüedad al sur de Medellín',
+      img: IMG + 'colombia4_0d9ebaf0.jpg',
+      alt: 'Excavación de las tumbas prehispánicas halladas al sur de Medellín',
+      text: [
+        'Arqueólogos identificaron tres tumbas de más de 2.000 años de antigüedad en el área metropolitana de Medellín; el primer hallazgo se produjo el 16 de mayo de 2016 en Itagüí.',
+        'Según la Corporación SIPAH, las tumbas tenían una profundidad de hasta dos metros y cada una contenía dos vasijas.',
+      ],
+      facts: [['Ubicación', 'Itagüí, sur del Valle de Aburrá'], ['Antigüedad', 'Más de 2.000 años'], ['Hallazgo', '3 tumbas'], ['Contenido', '2 vasijas por tumba · hasta 2 m de profundidad']],
+      url: 'https://artdaily.com/news/87817/Pre-Hispanic-tombs-found-in-Colombia-are-over-2-000-ye',
+      source: 'AFP (en inglés)',
+    },
+    telemedellin: {
+      meta: 'Medellín · 2.500 años',
+      title: 'Hallazgo de hace 2.500 años en sede de Telemedellín',
+      img: IMG + 'hallazgo-vasijas-telemedellin.jpg',
+      alt: 'Vasijas cerámicas precolombinas halladas en la sede de Telemedellín',
+      text: [
+        'En 2015, durante las excavaciones del canal del parque Gabriel García Márquez, en la sede de Telemedellín (El Poblado), se registró un hallazgo en un lugar con más de 2.500 años de antigüedad.',
+        'Las piezas halladas tendrían entre 2.500 y 3.000 años. El trabajo arqueológico estuvo a cargo de la Corporación SIPAH, con el arqueólogo Juan Pablo Díez.',
+      ],
+      facts: [['Ubicación', 'Sede de Telemedellín, El Poblado'], ['Año', '2015'], ['Antigüedad', '2.500 – 3.000 años'], ['Hallazgo', 'Vasijas cerámicas']],
+      url: 'https://www.medellin.gov.co/es/sala-de-prensa/noticias/hallados-yacimientos-arqueologicos-en-zona-del-canal-telemedellin/',
+      source: 'Alcaldía de Medellín',
+    },
+    itagui: {
+      meta: 'Itagüí · 2.000 años',
+      title: 'Tumba indígena de más de 2.000 años fue encontrada en Itagüí',
+      img: IMG + 'noticia-caracol.jpg',
+      alt: 'Reportaje de Noticias Caracol sobre el hallazgo arqueológico de hace dos mil años en Itagüí',
+      text: [
+        'Una tumba con dos vasijas en cerámica hechas hace unos 2.000 años fue encontrada por arqueólogos en el terreno donde se construía el Centro Integral Parque de las Luces, en Itagüí.',
+        'El hallazgo apareció tras el movimiento de tierra de una retroexcavadora. La Corporación SIPAH, dirigida por el arqueólogo Juan Pablo Díez Ramírez, quedó a cargo de su estudio.',
+      ],
+      facts: [['Ubicación', 'Parque de las Luces, Itagüí'], ['Fecha', 'Mayo de 2016'], ['Antigüedad', 'Unos 2.000 años'], ['Hallazgo', 'Tumba con dos vasijas de cerámica']],
+      url: 'https://www.elcolombiano.com/antioquia/tumba-indigena-de-mas-de-2-000-anos-fue-encontrada-en-itagui-MF4171824',
+      source: 'El Colombiano',
+    },
+  };
+
+  function initProjectSheet() {
+    const sheet = $('[data-sheet]');
+    const panel = $('[data-sheet-panel]', sheet);
+    const scrim = $('.sheet__scrim', sheet);
+    const more = $('[data-sheet-more]', sheet);
+    const closeBtn = $('.sheet__close', sheet);
+    let card = null, opener = null, geo = null, isOpen = false, afterClose = null;
+
+    const frame = (t) => {
+      if (!geo) return;
+      const s = geo.s0 + (1 - geo.s0) * t;
+      const r = (10 + 6 * t) / s; // radio visual de 10px (tarjeta) a 16px (ficha)
+      panel.style.transform = `translate(${geo.dx * (1 - t)}px, ${geo.dy * (1 - t)}px) scale(${s})`;
+      panel.style.clipPath = `inset(0 ${geo.ir * (1 - t)}px ${geo.ib * (1 - t)}px 0 round ${r}px)`;
+      scrim.style.opacity = String(clamp(t));
+      // El contenido extra de la ficha aparece cuando ya casi tiene su tamaño
+      const extra = String(clamp((t - 0.45) / 0.55));
+      more.style.opacity = extra;
+      closeBtn.style.opacity = extra;
+    };
+    const spring = createSpring({ value: 0, damping: 1, response: 0.42, precision: 0.0005, onUpdate: frame });
+
+    function measure() {
+      panel.style.transform = 'none';
+      panel.style.clipPath = 'none';
+      const p = panel.getBoundingClientRect();
+      const c = card.getBoundingClientRect();
+      const s0 = Math.max(c.width / p.width, c.height / p.height);
+      geo = { dx: c.left - p.left, dy: c.top - p.top, s0, ir: Math.max(0, p.width - c.width / s0), ib: Math.max(0, p.height - c.height / s0) };
+    }
+
+    function open(id, btn) {
+      const data = PROJECTS[id];
+      if (!data || isOpen) return;
+      isOpen = true;
+      opener = btn;
+      card = btn.closest('.project');
+      $('[data-sheet-img]', sheet).src = data.img;
+      $('[data-sheet-img]', sheet).alt = data.alt;
+      $('[data-sheet-meta]', sheet).textContent = data.meta;
+      $('[data-sheet-title]', sheet).textContent = data.title;
+      $('[data-sheet-text]', sheet).innerHTML = data.text.map((p) => `<p>${p}</p>`).join('');
+      $('[data-sheet-facts]', sheet).innerHTML = data.facts.map(([k, v]) => `<div><dt>${k}</dt><dd>${v}</dd></div>`).join('');
+      const srcLink = $('[data-sheet-source]', sheet);
+      srcLink.href = data.url;
+      srcLink.firstChild.textContent = `Leer en ${data.source} `;
+      sheet.hidden = false;
+      panel.scrollTop = 0;
+      lockScroll();
+      if (!spring.active) { measure(); frame(spring.value); } // pinta ya el estado inicial: sin parpadeo
+      card.style.visibility = 'hidden';
+      if (reduced) { geo = null; panel.style.transform = 'none'; panel.style.clipPath = 'none'; panel.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 200 }); scrim.style.opacity = '1'; more.style.opacity = '1'; closeBtn.style.opacity = '1'; }
+      else spring.to(1, { response: 0.42 });
+      closeBtn.focus({ preventScroll: true });
+    }
+
+    function close(then) {
+      if (!isOpen) return;
+      isOpen = false;
+      afterClose = then || null;
+      panel.scrollTop = 0;
+      const done = () => {
+        sheet.hidden = true;
+        if (card) card.style.visibility = '';
+        unlockScroll();
+        if (afterClose) afterClose(); else opener?.focus({ preventScroll: true });
+        afterClose = null;
+      };
+      if (reduced) { panel.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 150 }).finished.then(done); return; }
+      spring.to(0, { response: 0.36, onRest: done });
+    }
+
+    $$('[data-project-open]').forEach((btn) => btn.addEventListener('click', () => open(btn.dataset.projectOpen, btn)));
+    $$('[data-sheet-close]', sheet).forEach((el) => el.addEventListener('click', () => close()));
+    $('[data-sheet-cta]', sheet).addEventListener('click', (e) => {
+      e.preventDefault();
+      close(() => document.getElementById('contacto').scrollIntoView({ behavior: reduced ? 'auto' : 'smooth' }));
+    });
+    sheet.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') { e.preventDefault(); close(); }
+      else trapFocus(panel, e);
+    });
+    window.addEventListener('resize', () => { if (isOpen && card && !spring.active) { measure(); frame(1); } }, { passive: true });
+  }
+
+  /* 11d. TÍTULOS QUE SE REVELAN POR LÍNEA -----------------------------------
+     Cada palabra va en una máscara; las palabras suben desde abajo agrupadas
+     por línea visual (stagger por línea, no por palabra), como en apple.com.
+     Conserva <em> y el texto sigue siendo legible para lectores de pantalla. */
+  function initSplitTitles() {
+    // Solo el H1 del inicio: un único momento de movimiento tipográfico, no en cada sección
+    const titles = $$('[data-split]');
+    const wrapWords = (node) => {
+      [...node.childNodes].forEach((child) => {
+        if (child.nodeType === Node.TEXT_NODE) {
+          const frag = document.createDocumentFragment();
+          child.textContent.split(/(\s+)/).forEach((part) => {
+            if (!part) return;
+            if (/^\s+$/.test(part)) { frag.appendChild(document.createTextNode(part)); return; }
+            const w = document.createElement('span');
+            w.className = 'split-word';
+            const i = document.createElement('span');
+            i.className = 'split-word__i';
+            i.textContent = part;
+            w.appendChild(i);
+            frag.appendChild(w);
+          });
+          child.replaceWith(frag);
+        } else if (child.nodeType === Node.ELEMENT_NODE) {
+          wrapWords(child);
+        }
+      });
+    };
+    const assignLines = (title) => {
+      let line = -1, lastTop = null;
+      $$('.split-word', title).forEach((w) => {
+        const top = w.offsetTop;
+        if (lastTop === null || Math.abs(top - lastTop) > 4) { line++; lastTop = top; }
+        w.firstChild.style.setProperty('--line', String(line));
+      });
+    };
+    titles.forEach((t) => { wrapWords(t); t.classList.add('split-title'); });
+    const layout = () => titles.forEach((t) => { if (!t.classList.contains('is-in')) assignLines(t); });
+    layout();
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(layout);
+    let rt;
+    window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(layout, 150); }, { passive: true });
+
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((en) => {
+        if (!en.isIntersecting) return;
+        io.unobserve(en.target);
+        en.target.classList.add('is-in');
+      });
+    }, { threshold: 0.3 });
+    titles.forEach((t) => {
+      if (t.hasAttribute('data-split')) requestAnimationFrame(() => t.classList.add('is-in')); // el H1 entra al cargar
+      else io.observe(t);
+    });
+  }
+
+  /* 12. DRAWER MÓVIL estilo Vaul -------------------------------------------
+     Se arrastra hacia abajo para cerrar (1:1 con el dedo), cierra por
+     distancia (30%) o por velocidad; hacia arriba aplica fricción. */
+  const drawer = $('[data-drawer]');
+  const overlay = $('[data-drawer-overlay]');
+  const menuBtn = $('[data-drawer-open]');
+  let drawerOpen = false;
+  let drawerTimer = 0;
+
+  /* Física del drawer: y = 0 abierto, y = altura cerrado. Un único spring
+     interrumpible mueve el panel y el fondo; abrir/cerrar/arrastrar solo cambian
+     su objetivo, así nunca hay saltos aunque se toque a mitad de animación. */
+  const drawerH = () => drawer.offsetHeight || window.innerHeight * 0.7;
+  const drawerSpring = createSpring({
+    value: 0, damping: 1, response: 0.35, precision: 0.5,
+    onUpdate: (y) => {
+      drawer.style.transform = `translateY(${y}px)`;
+      overlay.style.opacity = String(1 - clamp(y / drawerH()));
+    },
+  });
+
+  function openDrawer() {
+    if (drawerOpen) return;
+    drawerOpen = true;
+    clearTimeout(drawerTimer);
+    const wasHidden = drawer.hidden;
+    drawer.hidden = false;
+    overlay.hidden = false;
+    if (wasHidden) drawerSpring.set(drawerH()); // arranca justo fuera de pantalla
+    menuBtn.setAttribute('aria-expanded', 'true');
+    lockScroll();
+    if (reduced) drawerSpring.set(0);
+    else drawerSpring.to(0, { damping: 1, response: 0.35 }); // apertura por toque: sin rebote
+    $('a', drawer).focus({ preventScroll: true });
+  }
+
+  function closeDrawer({ restoreFocus = true, velocity = 0 } = {}) {
+    if (!drawerOpen) return;
+    drawerOpen = false;
+    menuBtn.setAttribute('aria-expanded', 'false');
+    unlockScroll();
+    const hide = () => { drawer.hidden = true; overlay.hidden = true; };
+    if (reduced) { drawerSpring.set(drawerH()); hide(); }
+    else drawerSpring.to(drawerH(), { velocity, damping: 1, response: 0.3, onRest: hide });
+    if (restoreFocus) menuBtn.focus({ preventScroll: true });
+  }
+
+  function initDrawer() {
+    menuBtn.addEventListener('click', openDrawer);
+    overlay.addEventListener('click', () => closeDrawer());
+    $('[data-drawer-close]', drawer).addEventListener('click', () => closeDrawer());
+    $$('a', drawer).forEach((a) => a.addEventListener('click', () => closeDrawer({ restoreFocus: false })));
+    drawer.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeDrawer();
+      else trapFocus(drawer, e);
+    });
+    window.matchMedia('(min-width: 1024px)').addEventListener('change', (e) => { if (e.matches) closeDrawer({ restoreFocus: false }); });
+
+    /* Arrastre 1:1 respetando el punto de agarre; al soltar se proyecta el
+       impulso (Apple) y se decide abrir/cerrar según dónde "caería" el panel.
+       La velocidad del dedo pasa al spring: sin costura entre gesto y animación. */
+    const tracker = velocityTracker();
+    let grabOffset = 0, startY = 0, dragging = false, pid = null, suppressClick = false;
+    drawer.addEventListener('pointerdown', (e) => {
+      if (pid !== null || !drawerOpen) return; // protección multi-touch
+      pid = e.pointerId; startY = e.clientY; dragging = false;
+      grabOffset = e.clientY - drawerSpring.value; // si estaba en movimiento, se agarra donde está
+      tracker.reset(); tracker.add(0, e.clientY);
+    });
+    drawer.addEventListener('pointermove', (e) => {
+      if (e.pointerId !== pid) return;
+      tracker.add(0, e.clientY);
+      if (!dragging) {
+        if (Math.abs(e.clientY - startY) < 10) return; // histéresis
+        dragging = true;
+        drawer.setPointerCapture(e.pointerId);
+      }
+      const raw = e.clientY - grabOffset;
+      // Hacia arriba: rubber-band de Apple en vez de un tope seco
+      drawerSpring.set(raw >= 0 ? raw : rubberband(raw, drawerH()));
+    });
+    const end = (e) => {
+      if (e.pointerId !== pid) return;
+      pid = null;
+      if (!dragging) return;
+      dragging = false;
+      suppressClick = true;
+      const v = tracker.get().y;
+      const projected = drawerSpring.value + project(v, 0.99);
+      if (projected > drawerH() * 0.5) {
+        closeDrawer({ velocity: v });
+      } else {
+        // Vuelve a abierto con la inercia del gesto: un rebote sutil (damping 0.8) porque hubo impulso
+        drawerSpring.to(0, { velocity: v, damping: 0.8, response: 0.3 });
+      }
+    };
+    drawer.addEventListener('pointerup', end);
+    drawer.addEventListener('pointercancel', end);
+    // Evita que soltar tras arrastrar active un enlace
+    drawer.addEventListener('click', (e) => {
+      if (suppressClick) { e.preventDefault(); e.stopPropagation(); suppressClick = false; }
+    }, true);
+  }
+
+  /* 13. TOASTER estilo Sonner ----------------------------------------------
+     toast({ type, title, description, duration }).
+     Apilado con escala, expansión al hover, timers pausados en hover y con la
+     pestaña oculta, y swipe horizontal para cerrar (por distancia o velocidad). */
+  const toasterList = $('[data-toaster]');
+  const toasts = [];
+  const GAP = 14;
+  const VISIBLE = 3;
+  let expanded = false;
+
+  function layoutToasts() {
+    let offset = 0;
+    toasts.forEach((t, i) => {
+      t.el.style.zIndex = String(toasts.length - i);
+      let transform;
+      let opacity = 1;
+      if (!t.mounted) { transform = 'translateY(100%)'; opacity = 0; }
+      else if (t.removed) { transform = t.exitTransform || 'translateY(100%)'; opacity = 0; }
+      else if (expanded) { transform = `translateY(${-offset}px)`; }
+      else {
+        transform = `translateY(${-i * GAP}px) scale(${1 - i * 0.05})`;
+        if (i >= VISIBLE) opacity = 0;
+      }
+      if (!t.removed) offset += t.height + GAP;
+      t.base = transform;
+      t.el.style.transform = transform;
+      t.el.style.opacity = String(opacity);
+    });
+    const front = toasts.find((t) => !t.removed);
+    toasterList.style.height = `${expanded ? Math.max(0, offset - GAP) : front ? front.height : 0}px`;
+  }
+
+  function startTimer(t) {
+    if (t.remaining === Infinity) return;
+    t.start = Date.now();
+    t.timer = setTimeout(() => dismissToast(t), t.remaining);
+  }
+  function pauseTimer(t) {
+    clearTimeout(t.timer);
+    if (t.start) t.remaining -= Date.now() - t.start;
+  }
+
+  function dismissToast(t, exitTransform) {
+    if (t.removed) return;
+    clearTimeout(t.timer);
+    t.removed = true;
+    t.exitTransform = exitTransform;
+    layoutToasts();
+    setTimeout(() => {
+      t.el.remove();
+      toasts.splice(toasts.indexOf(t), 1);
+      layoutToasts();
+    }, 400);
+  }
+
+  function toast({ type = 'success', title, description = '', duration = 4500 }) {
+    const el = document.createElement('li');
+    el.className = `toast toast--${type}`;
+    el.setAttribute('role', type === 'error' ? 'alert' : 'status');
+    el.innerHTML = `
+      <svg class="toast__icon" aria-hidden="true"><use href="#${type === 'error' ? 'i-alert' : 'i-check'}"/></svg>
+      <div><p class="toast__title"></p>${description ? '<p class="toast__desc"></p>' : ''}</div>`;
+    $('.toast__title', el).textContent = title;
+    if (description) $('.toast__desc', el).textContent = description;
+    toasterList.prepend(el);
+
+    const t = { el, mounted: false, removed: false, height: el.offsetHeight, remaining: duration, base: '' };
+    toasts.unshift(t);
+    layoutToasts();
+    requestAnimationFrame(() => requestAnimationFrame(() => { t.mounted = true; layoutToasts(); }));
+    if (!expanded && !document.hidden) startTimer(t);
+
+    // Swipe para cerrar
+    let sx = 0, st = 0, dx = 0, pid = null;
+    el.addEventListener('pointerdown', (e) => {
+      if (pid !== null || t.removed) return;
+      pid = e.pointerId; sx = e.clientX; st = performance.now(); dx = 0;
+      el.setPointerCapture(e.pointerId);
+      el.classList.add('is-dragging');
+    });
+    el.addEventListener('pointermove', (e) => {
+      if (e.pointerId !== pid) return;
+      dx = e.clientX - sx;
+      el.style.transform = `${t.base} translateX(${dx}px)`;
+      el.style.opacity = String(1 - clamp(Math.abs(dx) / 260));
+    });
+    const end = (e) => {
+      if (e.pointerId !== pid) return;
+      pid = null;
+      el.classList.remove('is-dragging');
+      const v = Math.abs(dx) / Math.max(1, performance.now() - st);
+      if (Math.abs(dx) > 70 || (v > 0.11 && Math.abs(dx) > 8)) {
+        dismissToast(t, `${t.base} translateX(${dx > 0 ? 110 : -110}%)`);
+      } else {
+        el.style.transform = t.base;
+        el.style.opacity = '1';
+      }
+    };
+    el.addEventListener('pointerup', end);
+    el.addEventListener('pointercancel', end);
+    return t;
+  }
+
+  function initToaster() {
+    toasterList.addEventListener('pointerenter', () => {
+      expanded = true;
+      toasts.forEach(pauseTimer);
+      layoutToasts();
+    });
+    toasterList.addEventListener('pointerleave', () => {
+      expanded = false;
+      toasts.forEach((t) => !t.removed && startTimer(t));
+      layoutToasts();
+    });
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) toasts.forEach(pauseTimer);
+      else if (!expanded) toasts.forEach((t) => !t.removed && startTimer(t));
+    });
+  }
+
+  /* 14. FORMULARIO con validación en línea -------------------------------
+     Si FORM_ENDPOINT está vacío, se abre el cliente de correo con los datos
+     (no hay backend). Para un servicio tipo Formspree, pega aquí su URL. */
+  const FORM_ENDPOINT = ''; // TODO: p. ej. 'https://formspree.io/f/xxxxxx'
+  const form = $('[data-form]');
+  const RULES = {
+    nombre: (v) => (v.trim().length >= 2 ? '' : 'Escribe tu nombre (mínimo 2 caracteres).'),
+    correo: (v) => (/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim()) ? '' : 'Escribe un correo válido, por ejemplo nombre@empresa.com.'),
+    telefono: (v) => {
+      const digits = v.replace(/\D/g, '');
+      if (!/^[\d\s+()-]*$/.test(v)) return 'Usa solo números, espacios, + o guiones.';
+      return digits.length >= 7 && digits.length <= 15 ? '' : 'Escribe un teléfono de 7 a 15 dígitos.';
+    },
+    tipo: (v) => (v ? '' : 'Selecciona el tipo de proyecto.'),
+    mensaje: (v) => (v.trim().length >= 10 ? '' : 'Cuéntanos un poco más (mínimo 10 caracteres).'),
+  };
+
+  function validateField(input) {
+    const rule = RULES[input.name];
+    if (!rule) return true;
+    const msg = rule(input.value);
+    const err = document.getElementById(`e-${input.name}`);
+    input.setAttribute('aria-invalid', msg ? 'true' : 'false');
+    if (err.textContent !== msg) err.textContent = msg;
+    return !msg;
+  }
+
+  function initForm() {
+    const fields = $$('input, select, textarea', form).filter((f) => RULES[f.name]);
+    fields.forEach((f) => {
+      f.addEventListener('blur', () => { if (f.value || f.dataset.touched) { f.dataset.touched = '1'; validateField(f); } });
+      f.addEventListener('input', () => { if (f.dataset.touched) validateField(f); });
+      f.addEventListener('change', () => { if (f.tagName === 'SELECT') { f.dataset.touched = '1'; validateField(f); } });
+    });
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      fields.forEach((f) => (f.dataset.touched = '1'));
+      const invalid = fields.filter((f) => !validateField(f));
+      if (invalid.length) {
+        invalid[0].focus();
+        toast({ type: 'error', title: 'Revisa los campos marcados', description: `${invalid.length} ${invalid.length === 1 ? 'campo necesita' : 'campos necesitan'} atención.` });
+        return;
+      }
+      const data = Object.fromEntries(new FormData(form));
+      const btn = $('button[type="submit"]', form);
+      const label = $('.btn__label', btn);
+      btn.disabled = true;
+      btn.classList.add('is-loading');
+      label.textContent = 'Enviando…';
+
+      try {
+        if (FORM_ENDPOINT) {
+          const res = await fetch(FORM_ENDPOINT, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+            body: JSON.stringify(data),
+          });
+          if (!res.ok) throw new Error(String(res.status));
+          form.reset();
+          fields.forEach((f) => { delete f.dataset.touched; f.removeAttribute('aria-invalid'); });
+          toast({ title: 'Solicitud enviada', description: `Gracias, ${data.nombre.split(' ')[0]}. Te responderemos en un máximo de 2 días hábiles.` });
+        } else {
+          const body = [
+            `Nombre: ${data.nombre}`,
+            `Empresa: ${data.empresa || '—'}`,
+            `Correo: ${data.correo}`,
+            `Teléfono: ${data.telefono}`,
+            `Tipo de proyecto: ${data.tipo}`,
+            '',
+            data.mensaje,
+          ].join('\n');
+          const href = `mailto:sipahitagui@gmail.com?subject=${encodeURIComponent('Solicitud de cotización · ' + data.tipo)}&body=${encodeURIComponent(body)}`;
+          toast({ title: 'Solicitud lista', description: 'Abrimos tu aplicación de correo con los datos para que la envíes.' });
+          window.location.href = href;
+        }
+      } catch (err) {
+        toast({ type: 'error', title: 'No pudimos enviar la solicitud', description: 'Inténtalo de nuevo o escríbenos a sipahitagui@gmail.com.' });
+      } finally {
+        btn.disabled = false;
+        btn.classList.remove('is-loading');
+        label.textContent = 'Enviar solicitud';
+      }
+    });
+  }
+
+  /* 15. INIT ------------------------------------------------------------- */
+  function init() {
+    renderGallery();
+    initFilters();
+    initLightbox();
+    initActiveNav();
+    initReveals();
+    initProcess();
+    initCounters();
+    initDrawer();
+    initTimelineDrag();
+    initProjectSheet();
+    initSplitTitles();
+    initToaster();
+    initForm();
+    setupTimeline();
+
+    const year = $('[data-year]');
+    if (year) year.textContent = String(new Date().getFullYear());
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    let resizeT;
+    window.addEventListener('resize', () => {
+      clearTimeout(resizeT);
+      resizeT = setTimeout(setupTimeline, 120);
+    }, { passive: true });
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(setupTimeline);
+
+    motionQuery.addEventListener('change', (e) => {
+      reduced = e.matches;
+      setupTimeline();
+    });
+    update();
+  }
+
+  init();
+  window.toast = toast; // API pública tipo Sonner: toast({ title, description })
+})();
