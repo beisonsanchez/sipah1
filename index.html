@@ -6,7 +6,7 @@
   <title>SIPAH Corporation · Arqueología e investigación patrimonial en Colombia</title>
   <meta name="description" content="SIPAH Corporation: investigación arqueológica, arqueología preventiva, planes de manejo y gestión patrimonial para obras públicas y privadas en Colombia. Sede en Itagüí, Antioquia.">
   <meta name="theme-color" content="#17150F">
-  <meta name="color-scheme" content="light">
+  <meta name="color-scheme" content="light dark">
   <!-- TODO: reemplazar https://www.sipah.org por el dominio definitivo -->
   <link rel="canonical" href="https://www.sipah.org/">
 
@@ -184,16 +184,24 @@
         <p class="eyebrow eyebrow--light hero-in" style="--i:0">Arqueología · Patrimonio · Territorio</p>
         <h1 class="hero__title" id="hero-title" data-split>Descubrimos la historia que <em>guarda la tierra</em></h1>
         <p class="hero__sub hero-in" style="--i:2">Investigación arqueológica, gestión patrimonial y estudios ambientales para obras públicas y privadas en Colombia. Laboratorio propio en Itagüí.</p>
+        <!-- Credenciales en el primer segundo: datos reales con fuente en la página -->
+        <ul class="hero__proof hero-in" style="--i:3" aria-label="SIPAH en datos">
+          <li><strong>+10.000</strong> fragmentos documentados en Telemedellín</li>
+          <li><strong>2.500</strong> años de historia excavada</li>
+          <li><strong>ICANH</strong> supervisión en cada programa</li>
+        </ul>
         <div class="hero__ctas hero-in" style="--i:3">
           <a class="btn btn--primary" href="#servicios">Nuestros servicios <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></a>
           <a class="btn btn--glass" href="#proyectos">Ver proyectos</a>
         </div>
       </div>
       <!-- Indicador: orienta en qué foto de la secuencia estás -->
-      <div class="hero__frames container hero-in" style="--i:4" aria-hidden="true">
-        <p class="hero__frame-label"><span data-hero-count>01</span><span class="hero__frame-total">/ 05</span><span data-hero-label>Excavación</span></p>
-        <p class="hero__scene" data-hero-scene>Excavamos con método y control estratigráfico.</p>
-        <ol class="hero__bars" data-hero-bars><li><span></span></li><li><span></span></li><li><span></span></li><li><span></span></li><li><span></span></li></ol>
+      <div class="hero__frames container hero-in" style="--i:4">
+        <p class="hero__frame-label" aria-hidden="true"><span data-hero-count>01</span><span class="hero__frame-total">/ 05</span><span data-hero-label>Excavación</span></p>
+        <p class="hero__scene" data-hero-scene aria-hidden="true">Excavamos con método y control estratigráfico.</p>
+        <ol class="hero__bars" data-hero-bars aria-hidden="true"><li><span></span></li><li><span></span></li><li><span></span></li><li><span></span></li><li><span></span></li></ol>
+        <!-- Salida explícita de la secuencia: nadie queda atrapado en 5 tramos de scroll -->
+        <a class="hero__skip" href="#nosotros" data-hero-skip>Saltar intro <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></a>
       </div>
      </div>
     </section>
@@ -237,20 +245,6 @@
         <article class="mv__card">
           <p class="mv__label">Visión</p>
           <p class="mv__text">Ser un referente nacional en arqueología e investigación patrimonial, reconocido por convertir cada estudio en conocimiento público y memoria compartida.</p>
-        </article>
-        <article class="mv__people">
-          <p class="mv__label">Dirección</p>
-          <ul class="people">
-            <li>
-              <img src="img-original/3-1-1024x1024.jpeg" alt="Juan Pablo Díez Ramírez, director de la Corporación SIPAH" width="1024" height="1024" loading="lazy" decoding="async">
-              <span><strong>Juan Pablo Díez Ramírez</strong>Antropólogo y arqueólogo · Director, Corporación SIPAH</span>
-            </li>
-            <li>
-              <img src="img-original/5-1024x1024.jpeg" alt="Lucy Tobón Ospina, directora del Museo Comunitario Graciliano Arcila Vélez" width="1024" height="1024" loading="lazy" decoding="async">
-              <span><strong>Lucy Tobón Ospina</strong>Directora, Museo Comunitario G.A.V.</span>
-            </li>
-          </ul>
-          <a class="mv__more" href="perfiles.html">Ver perfiles profesionales <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></a>
         </article>
       </div>
     </section>
@@ -379,6 +373,55 @@
             </div>
           </a>
         </div>
+
+        <!-- Mapa de hallazgos: plano esquemático del Valle de Aburrá (norte arriba).
+             Posiciones aproximadas, proyectadas desde lat/lon en un lienzo de 600×720.
+             Cada pin abre la misma ficha que la tarjeta y la ficha nace del pin. -->
+        <div class="sites" data-sites data-reveal>
+          <div class="sites__map">
+            <svg class="sites__svg" viewBox="0 0 600 720" aria-hidden="true" focusable="false">
+              <!-- Curvas de nivel de las dos laderas del valle -->
+              <g class="sites__contours">
+                <path d="M20 720C60 600 70 520 120 420S170 220 230 120 290 20 300 0"/>
+                <path d="M-20 720C20 610 30 520 80 420S120 220 180 120 240 20 250 0"/>
+                <path d="M-60 720C-20 620 -10 520 40 420S70 220 130 120 190 20 200 0"/>
+                <path d="M300 720C340 620 400 540 450 440S520 240 560 140 600 40 610 0"/>
+                <path d="M350 720C390 630 450 550 500 450S570 250 610 150 650 50 660 0"/>
+                <path d="M400 720C440 640 500 560 550 460S620 260 660 160"/>
+              </g>
+              <!-- Río Medellín (Aburrá), de sur a norte -->
+              <path class="sites__river" d="M150 720C200 640 250 580 270 520S320 420 343 360 370 260 386 200 430 60 450 0"/>
+              <text class="sites__river-label" x="402" y="150" transform="rotate(-68 402 150)">Río Medellín</text>
+              <g class="sites__towns">
+                <text x="250" y="230">MEDELLÍN</text>
+                <text x="392" y="410">El Poblado</text>
+                <text x="120" y="455">ITAGÜÍ</text>
+                <text x="330" y="560">ENVIGADO</text>
+                <text x="300" y="28">↑ Bello</text>
+              </g>
+              <g class="sites__compass" transform="translate(548 664)">
+                <circle r="18"/><path d="M0 -12L5 4H-5Z"/><text y="-22">N</text>
+              </g>
+              <g class="sites__scale" transform="translate(40 690)">
+                <path d="M0 0H86M0 -4V4M86 -4V4"/><text x="0" y="-9">0 · 2 km</text>
+              </g>
+            </svg>
+            <button class="pin" type="button" style="--x:61.4%; --y:52.8%" data-project-open="telemedellin" data-pin="telemedellin" aria-label="Telemedellín, El Poblado: ver ficha del hallazgo"><span class="pin__n" aria-hidden="true">1</span></button>
+            <button class="pin" type="button" style="--x:39.3%; --y:69.4%" data-project-open="tumbas" data-pin="tumbas" aria-label="Parque de las Luces, Itagüí: ver ficha del hallazgo"><span class="pin__n" aria-hidden="true">2</span></button>
+            <a class="pin pin--alt" href="#petroglifos" style="--x:31%; --y:74%" data-pin="petro" aria-label="Petroglifos de El Rosario: ir a la sección"><span class="pin__n" aria-hidden="true">3</span></a>
+          </div>
+          <div class="sites__info">
+            <p class="eyebrow">Mapa de hallazgos</p>
+            <h3 class="sites__title">Donde la tierra habló</h3>
+            <p class="sites__intro">Lugares del Valle de Aburrá donde SIPAH ha excavado, registrado o divulgado patrimonio arqueológico.</p>
+            <ol class="sites__list">
+              <li><button class="site" type="button" data-project-open="telemedellin" data-site="telemedellin"><span class="site__n">1</span><span><strong>Telemedellín, El Poblado</strong><small>2015 · 24 vasijas y +10.000 fragmentos</small></span></button></li>
+              <li><button class="site" type="button" data-project-open="tumbas" data-site="tumbas"><span class="site__n">2</span><span><strong>Parque de las Luces, Itagüí</strong><small>2016–2017 · seis tumbas de 2.000 años</small></span></button></li>
+              <li><a class="site" href="#petroglifos" data-site="petro"><span class="site__n">3</span><span><strong>Petroglifos de El Rosario</strong><small>Arte rupestre · junto a nuestra sede</small></span></a></li>
+            </ol>
+            <p class="sites__note">Plano esquemático; ubicaciones aproximadas.</p>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -475,8 +518,16 @@
     <!-- ============ PETROGLIFOS ============ -->
     <section class="section petro" id="petroglifos" aria-labelledby="petro-title">
       <div class="container petro__grid">
-        <figure class="petro__media">
-          <img src="img-original/petroglifo.jpeg" alt="Roca con grabados prehispánicos en el parque de los Petroglifos de El Rosario, Itagüí" width="720" height="540" loading="lazy" decoding="async">
+        <!-- Excavación interactiva: una capa de tierra (colores Munsell) cubre la
+             foto; el usuario la raspa con el dedo o el cursor y aparece el grabado.
+             El botón la retira de una vez (teclado y lectores de pantalla). -->
+        <figure class="petro__media" data-dig>
+          <div class="dig">
+            <img src="img-original/petroglifo.jpeg" alt="Roca con grabados prehispánicos en el parque de los Petroglifos de El Rosario, Itagüí" width="720" height="540" loading="lazy" decoding="async">
+            <canvas class="dig__soil" aria-hidden="true" data-dig-canvas></canvas>
+            <p class="dig__hint" aria-hidden="true" data-dig-hint><svg class="icon"><use href="#i-trowel"/></svg>Raspa la tierra para descubrir el grabado</p>
+            <button class="dig__all" type="button" data-dig-all>Descubrir todo</button>
+          </div>
           <figcaption class="fig"><span class="fig__n">Fig. 5</span> Roca grabada · Parque de los Petroglifos, El Rosario, Itagüí · Archivo SIPAH</figcaption>
         </figure>
         <div class="petro__text" data-reveal>
@@ -576,11 +627,341 @@
       </div>
     </section>
 
+    <!-- ============ EQUIPO: PERFILES PROFESIONALES ============
+         Datos reales de https://corporacionsipah.org/perfiles-profesionales/
+         (32 perfiles: nombre, cargo, formación y foto). Las fotos están en /img-equipo
+         (WebP, copiadas del sitio oficial); si alguna falla, se muestran las iniciales. -->
+    <section class="section section--rule team" id="equipo" aria-labelledby="equipo-title" data-team>
+      <div class="container">
+        <header class="section__head" data-reveal>
+          <p class="eyebrow">09 — Equipo</p>
+          <h2 class="h2" id="equipo-title">Perfiles profesionales</h2>
+          <p class="section__intro">32 personas. Antropólogos y arqueólogos —la mayoría egresados de la Universidad de Antioquia—, un ingeniero ambiental, un biólogo, un museógrafo, un maestro en artes plásticas dedicado a la alfarería ancestral y el equipo técnico y operativo que sostiene cada obra.</p>
+          <a class="team__src" href="https://corporacionsipah.org/perfiles-profesionales/" target="_blank" rel="noopener">Fuente: corporacionsipah.org <svg class="icon" aria-hidden="true"><use href="#i-external"/></svg></a>
+        </header>
+
+        <div class="team__lead" data-reveal-group>
+          <article class="leader">
+            <div class="leader__photo" data-initials="JD"><img src="img-equipo/juanpablook.webp" alt="" width="238" height="164" loading="lazy" decoding="async"></div>
+            <p class="leader__role">Director General</p>
+            <h3 class="leader__name">Juan Pablo Díez Ramírez</h3>
+            <p class="leader__degree">Antropólogo / Arqueólogo · Universidad de Antioquia</p>
+            <ul class="leader__extra"><li>Candidato a MSc en Medio Ambiente y Desarrollo, Universidad Nacional de Colombia (sede Medellín)</li><li>Líder en formulación y gestión de proyectos</li></ul>
+          </article>
+          <article class="leader">
+            <div class="leader__photo" data-initials="JT"><img src="img-equipo/poll.webp" alt="" width="238" height="164" loading="lazy" decoding="async"></div>
+            <p class="leader__role">Vicepresidente</p>
+            <h3 class="leader__name">Jhan Poll Tamayo Echeverry</h3>
+            <p class="leader__degree">Ingeniero Ambiental · Universidad de Antioquia</p>
+            <ul class="leader__extra"><li>Coordinador de procesos ambientales</li></ul>
+          </article>
+          <article class="leader">
+            <div class="leader__photo" data-initials="LT"><img src="img-equipo/lucy.webp" alt="" width="238" height="164" loading="lazy" decoding="async"></div>
+            <p class="leader__role">Directora del Museo Comunitario G.A.V.</p>
+            <h3 class="leader__name">Lucy Astrid Tobón Ospina</h3>
+            <p class="leader__degree">Trabajadora Social · Universidad de Antioquia</p>
+            <ul class="leader__extra"><li>Especialización en Nuevas Tipologías Familiares</li><li>Especialización en Patrimonio y Comunidad</li></ul>
+          </article>
+        </div>
+
+        <div class="team__groups" id="team-groups">
+          <section class="team__group" aria-labelledby="g-inv">
+            <h3 class="team__group-title" id="g-inv">Investigación <span>20</span></h3>
+            <ul class="team__grid">
+              <li class="member">
+                <div class="member__photo" data-initials="JE"><img src="img-equipo/juan-esteban.webp" alt="" width="238" height="164" loading="lazy" decoding="async"></div>
+                <div class="member__info">
+                  <p class="member__name">Juan David Espinosa Wolff</p>
+                  <p class="member__role">Investigador</p>
+                  <p class="member__degree">Estudiante de Antropología · Universidad de Antioquia</p>
+                  <ul class="member__extra"><li>Diseño y audiovisuales</li><li>Coordinador de proyectos TIC</li><li>Piloto certificado de RPAS (drones)</li></ul>
+                </div>
+              </li>
+              <li class="member">
+                <div class="member__photo" data-initials="AT"><img src="img-equipo/godoi.webp" alt="" width="238" height="164" loading="lazy" decoding="async"></div>
+                <div class="member__info">
+                  <p class="member__name">Andrés Godoy Toro</p>
+                  <p class="member__role">Investigador</p>
+                  <p class="member__degree">Antropólogo / Arqueólogo · Universidad de Antioquia</p>
+                  <ul class="member__extra"><li>Candidato a MSc en Medio Ambiente y Desarrollo, Universidad Nacional de Colombia</li></ul>
+                </div>
+              </li>
+              <li class="member">
+                <div class="member__photo" data-initials="AF"><img src="img-equipo/adriana.webp" alt="" width="238" height="164" loading="lazy" decoding="async"></div>
+                <div class="member__info">
+                  <p class="member__name">Adriana María Franco Henao</p>
+                  <p class="member__role">Investigadora</p>
+                  <p class="member__degree">Antropóloga / Arqueóloga · Universidad de Antioquia</p>
+                  
+                </div>
+              </li>
+              <li class="member">
+                <div class="member__photo" data-initials="CM"><img src="img-equipo/carlos.webp" alt="" width="238" height="164" loading="lazy" decoding="async"></div>
+                <div class="member__info">
+                  <p class="member__name">Carlos Albeiro Monsalve Marín</p>
+                  <p class="member__role">Investigador</p>
+                  <p class="member__degree">Biólogo · Universidad de Antioquia</p>
+                  
+                </div>
+              </li>
+              <li class="member">
+                <div class="member__photo" data-initials="MB"><img src="img-equipo/monica.webp" alt="" width="238" height="164" loading="lazy" decoding="async"></div>
+                <div class="member__info">
+                  <p class="member__name">Mónica Cecilia Bran Pérez</p>
+                  <p class="member__role">Investigadora</p>
+                  <p class="member__degree">Antropóloga / Arqueóloga · Universidad de Antioquia</p>
+                  
+                </div>
+              </li>
+              <li class="member">
+                <div class="member__photo" data-initials="FC"><img src="img-equipo/fernando.webp" alt="" width="238" height="164" loading="lazy" decoding="async"></div>
+                <div class="member__info">
+                  <p class="member__name">Fernando Bustamante Clavijo</p>
+                  <p class="member__role">Investigador</p>
+                  <p class="member__degree">Antropólogo / Arqueólogo · Universidad de Antioquia</p>
+                  <ul class="member__extra"><li>Candidato a MSc en Antropología, Universidad de Antioquia</li></ul>
+                </div>
+              </li>
+              <li class="member">
+                <div class="member__photo" data-initials="CR"><img src="img-equipo/carolina.webp" alt="" width="238" height="164" loading="lazy" decoding="async"></div>
+                <div class="member__info">
+                  <p class="member__name">Carolina Imbol Rúa</p>
+                  <p class="member__role">Investigadora</p>
+                  <p class="member__degree">Antropóloga / Arqueóloga · Universidad de Antioquia</p>
+                  
+                </div>
+              </li>
+              <li class="member">
+                <div class="member__photo" data-initials="LG"><img src="img-equipo/luis.webp" alt="" width="238" height="164" loading="lazy" decoding="async"></div>
+                <div class="member__info">
+                  <p class="member__name">Luis Alfredo Giraldo Giraldo</p>
+                  <p class="member__role">Investigador</p>
+                  <p class="member__degree">Antropólogo / Arqueólogo · Universidad de Antioquia</p>
+                  
+                </div>
+              </li>
+              <li class="member is-extra">
+                <div class="member__photo" data-initials="YV"><img src="img-equipo/yadira1.webp" alt="" width="238" height="164" loading="lazy" decoding="async"></div>
+                <div class="member__info">
+                  <p class="member__name">Yadira Rosa Vidal Villadiego</p>
+                  <p class="member__role">Investigadora</p>
+                  <p class="member__degree">Antropóloga / Arqueóloga · Universidad de Antioquia</p>
+                  <ul class="member__extra"><li>Especialista en educación y lúdica educativa</li><li>Especialista en derecho internacional humanitario</li></ul>
+                </div>
+              </li>
+              <li class="member is-extra">
+                <div class="member__photo" data-initials="BL"><img src="img-equipo/beatriz.webp" alt="" width="238" height="164" loading="lazy" decoding="async"></div>
+                <div class="member__info">
+                  <p class="member__name">Beatriz Eliana López Ospina</p>
+                  <p class="member__role">Investigadora</p>
+                  <p class="member__degree">Antropóloga / Arqueóloga · Universidad de Antioquia</p>
+                  
+                </div>
+              </li>
+              <li class="member is-extra">
+                <div class="member__photo" data-initials="DC"><img src="img-equipo/diego.webp" alt="" width="238" height="164" loading="lazy" decoding="async"></div>
+                <div class="member__info">
+                  <p class="member__name">Diego Mauricio Castañeda Álvarez</p>
+                  <p class="member__role">Investigador</p>
+                  <p class="member__degree">Antropólogo / Arqueólogo · Universidad de Antioquia</p>
+                  
+                </div>
+              </li>
+              <li class="member is-extra">
+                <div class="member__photo" data-initials="CA"><img src="img-equipo/claudia.webp" alt="" width="238" height="164" loading="lazy" decoding="async"></div>
+                <div class="member__info">
+                  <p class="member__name">Clara Eugenia Arango Campuzano</p>
+                  <p class="member__role">Investigadora</p>
+                  <p class="member__degree">Antropóloga / Arqueóloga · Universidad de Antioquia</p>
+                  
+                </div>
+              </li>
+              <li class="member is-extra">
+                <div class="member__photo" data-initials="VM"><img src="img-equipo/victor.webp" alt="" width="238" height="164" loading="lazy" decoding="async"></div>
+                <div class="member__info">
+                  <p class="member__name">Víctor Antonio Martínez Quiroz</p>
+                  <p class="member__role">Investigador</p>
+                  <p class="member__degree">Antropólogo / Arqueólogo · Universidad de Antioquia</p>
+                  
+                </div>
+              </li>
+              <li class="member is-extra">
+                <div class="member__photo" data-initials="DF"><img src="img-equipo/dalia.webp" alt="" width="238" height="164" loading="lazy" decoding="async"></div>
+                <div class="member__info">
+                  <p class="member__name">Dalia Vargas Flórez</p>
+                  <p class="member__role">Investigadora</p>
+                  <p class="member__degree">Antropóloga / Arqueóloga · Universidad de Antioquia</p>
+                  
+                </div>
+              </li>
+              <li class="member is-extra">
+                <div class="member__photo" data-initials="AG"><img src="img-equipo/gutierrez.webp" alt="" width="238" height="164" loading="lazy" decoding="async"></div>
+                <div class="member__info">
+                  <p class="member__name">Andrés Augusto Gutiérrez Restrepo</p>
+                  <p class="member__role">Investigador</p>
+                  <p class="member__degree">Antropólogo / Arqueólogo · Universidad de Antioquia</p>
+                  
+                </div>
+              </li>
+              <li class="member is-extra">
+                <div class="member__photo" data-initials="MO"><img src="img-equipo/cristinaok.webp" alt="" width="238" height="164" loading="lazy" decoding="async"></div>
+                <div class="member__info">
+                  <p class="member__name">María Cristina Orozco Ríos</p>
+                  <p class="member__role">Investigadora</p>
+                  <p class="member__degree">Antropóloga / Arqueóloga · Universidad de Antioquia</p>
+                  
+                </div>
+              </li>
+              <li class="member is-extra">
+                <div class="member__photo" data-initials="SC"><img src="img-equipo/sucelok.webp" alt="" width="238" height="164" loading="lazy" decoding="async"></div>
+                <div class="member__info">
+                  <p class="member__name">Sucel Correa Carmona</p>
+                  <p class="member__role">Investigadora</p>
+                  <p class="member__degree">Antropóloga / Arqueóloga · Universidad de Antioquia</p>
+                  
+                </div>
+              </li>
+              <li class="member is-extra">
+                <div class="member__photo" data-initials="DQ"><img src="img-equipo/danielaok.webp" alt="" width="238" height="164" loading="lazy" decoding="async"></div>
+                <div class="member__info">
+                  <p class="member__name">Daniela López Quiroz</p>
+                  <p class="member__role">Investigadora</p>
+                  <p class="member__degree">Antropóloga / Arqueóloga · Universidad de Antioquia</p>
+                  
+                </div>
+              </li>
+              <li class="member is-extra">
+                <div class="member__photo" data-initials="JQ"><img src="img-equipo/jhon.webp" alt="" width="238" height="164" loading="lazy" decoding="async"></div>
+                <div class="member__info">
+                  <p class="member__name">Jhon Darío Quiroz Erazo</p>
+                  <p class="member__role">Investigador</p>
+                  <p class="member__degree">Antropólogo · Universidad de Antioquia</p>
+                  <ul class="member__extra"><li>Maestría en Desarrollo Cultural, Universidad Autónoma de Coahuila (México)</li></ul>
+                </div>
+              </li>
+              <li class="member is-extra">
+                <div class="member__photo" data-initials="YM"><img src="img-equipo/yuli.webp" alt="" width="238" height="164" loading="lazy" decoding="async"></div>
+                <div class="member__info">
+                  <p class="member__name">Yuly Andrea Moncada Restrepo</p>
+                  <p class="member__role">Investigadora</p>
+                  <p class="member__degree">Antropóloga / Arqueóloga · Universidad de Antioquia</p>
+                  
+                </div>
+              </li>
+            </ul>
+          </section>
+          <section class="team__group is-extra" aria-labelledby="g-ofi">
+            <h3 class="team__group-title" id="g-ofi">Museografía y oficios <span>2</span></h3>
+            <ul class="team__grid">
+              <li class="member">
+                <div class="member__photo" data-initials="CD"><img src="img-equipo/santis.webp" alt="" width="238" height="164" loading="lazy" decoding="async"></div>
+                <div class="member__info">
+                  <p class="member__name">Carlos Andrés De Santis González</p>
+                  <p class="member__role">Museógrafo</p>
+                  <p class="member__degree">Diseñador Industrial · Universidad Pontificia Bolivariana</p>
+                  
+                </div>
+              </li>
+              <li class="member">
+                <div class="member__photo" data-initials="JP"><img src="img-equipo/jorge.webp" alt="" width="238" height="164" loading="lazy" decoding="async"></div>
+                <div class="member__info">
+                  <p class="member__name">Jorge Hernán Prieto</p>
+                  <p class="member__role">Alfarería ancestral</p>
+                  <p class="member__degree">Maestro en Artes Plásticas</p>
+                  
+                </div>
+              </li>
+            </ul>
+          </section>
+          <section class="team__group is-extra" aria-labelledby="g-tec">
+            <h3 class="team__group-title" id="g-tec">Gestión técnica y administrativa <span>3</span></h3>
+            <ul class="team__grid">
+              <li class="member">
+                <div class="member__photo" data-initials="MZ"><img src="img-equipo/maria-fernanda.webp" alt="" width="238" height="164" loading="lazy" decoding="async"></div>
+                <div class="member__info">
+                  <p class="member__name">María Fernanda Zapata Osorio</p>
+                  <p class="member__role">Profesional SIG</p>
+                  <p class="member__degree">Estudiante de Arquitectura · UPB</p>
+                  
+                </div>
+              </li>
+              <li class="member">
+                <div class="member__photo is-initials" data-initials="EM" aria-hidden="true"></div>
+                <div class="member__info">
+                  <p class="member__name">Eider Andrés Montoya David</p>
+                  <p class="member__role">Prevención de riesgos laborales</p>
+                  <p class="member__degree">Ingeniero en Higiene y Seguridad Ocupacional · Politécnico Colombiano Jaime Isaza Cadavid</p>
+                  
+                </div>
+              </li>
+              <li class="member">
+                <div class="member__photo is-initials" data-initials="JE" aria-hidden="true"></div>
+                <div class="member__info">
+                  <p class="member__name">Jaime Alonso Estrada Ossa</p>
+                  <p class="member__role">Contador</p>
+                  <p class="member__degree">Universidad Cooperativa de Colombia</p>
+                  
+                </div>
+              </li>
+            </ul>
+          </section>
+          <section class="team__group is-extra" aria-labelledby="g-ope">
+            <h3 class="team__group-title" id="g-ope">Apoyo operativo <span>4</span></h3>
+            <ul class="team__grid">
+              <li class="member">
+                <div class="member__photo" data-initials="VL"><img src="img-equipo/valentina.webp" alt="" width="238" height="164" loading="lazy" decoding="async"></div>
+                <div class="member__info">
+                  <p class="member__name">Valentina Díez López</p>
+                  <p class="member__role">Auxiliar operativa</p>
+                  
+                  
+                </div>
+              </li>
+              <li class="member">
+                <div class="member__photo" data-initials="HC"><img src="img-equipo/hamilson.webp" alt="" width="238" height="164" loading="lazy" decoding="async"></div>
+                <div class="member__info">
+                  <p class="member__name">Haminson Rivas Chaverra</p>
+                  <p class="member__role">Auxiliar operativo</p>
+                  
+                  
+                </div>
+              </li>
+              <li class="member">
+                <div class="member__photo" data-initials="RH"><img src="img-equipo/ricardo.webp" alt="" width="238" height="164" loading="lazy" decoding="async"></div>
+                <div class="member__info">
+                  <p class="member__name">Ricardo Muriel Hernández</p>
+                  <p class="member__role">Auxiliar operativo</p>
+                  
+                  
+                </div>
+              </li>
+              <li class="member">
+                <div class="member__photo" data-initials="YH"><img src="img-equipo/jonatan.webp" alt="" width="238" height="164" loading="lazy" decoding="async"></div>
+                <div class="member__info">
+                  <p class="member__name">Yonatan Andrés Herrera Muñoz</p>
+                  <p class="member__role">Auxiliar operativo</p>
+                  
+                  
+                </div>
+              </li>
+            </ul>
+          </section>
+        </div>
+
+        <div class="team__more">
+          <button class="team__toggle" type="button" aria-expanded="false" aria-controls="team-groups" data-team-toggle>
+            <span data-team-label>Ver los 32 perfiles</span>
+            <svg class="icon" aria-hidden="true"><use href="#i-chev-r"/></svg>
+          </button>
+        </div>
+      </div>
+    </section>
+
     <!-- ============ PUBLICACIONES ============ -->
     <section class="section" id="publicaciones" aria-labelledby="pub-title">
       <div class="container">
         <header class="section__head" data-reveal>
-          <p class="eyebrow">09 — Publicaciones</p>
+          <p class="eyebrow">10 — Publicaciones</p>
           <h2 class="h2" id="pub-title">Publicaciones</h2>
           <p class="section__intro">Libros de investigación sobre Arboletes, Amalfi y la vida de Graciliano Arcila Vélez.</p>
         </header>
@@ -618,7 +999,7 @@
       <div class="container">
         <header class="section__head news__head" data-reveal>
           <div>
-            <p class="eyebrow">10 — Prensa</p>
+            <p class="eyebrow">11 — Prensa</p>
             <h2 class="h2" id="noticias-title">En la prensa</h2>
           </div>
           <a class="news__all" href="https://corporacionsipah.org/category/blog/" target="_blank" rel="noopener">Ver todas las noticias <svg class="icon" aria-hidden="true"><use href="#i-external"/></svg></a>
@@ -685,11 +1066,11 @@
     </section>
 
     <!-- ============ GALERÍA (adelanto: la galería completa vive en galeria.html) ============ -->
-    <section class="section section--tint" id="galeria" aria-labelledby="galeria-title">
+    <section class="section section--dark" id="galeria" aria-labelledby="galeria-title">
       <div class="container">
         <header class="section__head gteaser__head" data-reveal>
           <div>
-            <p class="eyebrow">11 — Archivo</p>
+            <p class="eyebrow">12 — Archivo</p>
             <h2 class="h2" id="galeria-title">Archivo fotográfico</h2>
             <p class="section__intro">Excavaciones, petroglifos, el museo y el trabajo con la comunidad de El Rosario.</p>
           </div>
@@ -746,8 +1127,54 @@
     <section class="cta" aria-labelledby="cta-title">
       <div class="container cta__inner" data-reveal>
         <h2 class="cta__title" id="cta-title">¿Tu obra necesita un <em>estudio arqueológico?</em></h2>
-        <p>Si el proyecto requiere licencia ambiental, necesita un Programa de Arqueología Preventiva aprobado por el ICANH. Lo hemos hecho en obras de Medellín e Itagüí; cuéntanos la tuya.</p>
-        <a class="btn btn--light" href="#contacto">Solicitar cotización <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+        <p>Si el proyecto requiere licencia ambiental, necesita un Programa de Arqueología Preventiva aprobado por el ICANH. Responde tres preguntas y te decimos qué necesita tu obra.</p>
+      </div>
+
+      <!-- Asistente "¿Necesito arqueología preventiva?": tres preguntas, un
+           resultado orientativo y la cotización ya rellenada con las respuestas. -->
+      <div class="container">
+        <form class="quiz" data-quiz aria-labelledby="quiz-title" novalidate>
+          <div class="quiz__head">
+            <p class="quiz__title" id="quiz-title">¿Necesito arqueología preventiva?</p>
+            <p class="quiz__step" aria-live="polite" data-quiz-step>Paso 1 de 3</p>
+          </div>
+          <div class="quiz__bar" aria-hidden="true"><span data-quiz-bar></span></div>
+          <div class="quiz__stage" data-quiz-stage>
+            <fieldset class="quiz__q" data-q="obra">
+              <legend>¿Qué tipo de obra es?</legend>
+              <div class="quiz__opts">
+                <label class="opt"><input type="radio" name="obra" value="Infraestructura (vías, energía, minería, hidrocarburos)"><span>Infraestructura<small>Vías, energía, minería, hidrocarburos</small></span></label>
+                <label class="opt"><input type="radio" name="obra" value="Edificación o urbanismo"><span>Edificación o urbanismo<small>Vivienda, comercio, parcelación</small></span></label>
+                <label class="opt"><input type="radio" name="obra" value="Obra pública municipal"><span>Obra pública municipal<small>Parques, colegios, canales, redes</small></span></label>
+                <label class="opt"><input type="radio" name="obra" value="Otro tipo de proyecto"><span>Otro<small>Cuéntanos en el formulario</small></span></label>
+              </div>
+            </fieldset>
+            <fieldset class="quiz__q" data-q="licencia" hidden>
+              <legend>¿El proyecto requiere licencia ambiental?</legend>
+              <div class="quiz__opts">
+                <label class="opt"><input type="radio" name="licencia" value="si"><span>Sí<small>La otorga la ANLA o la autoridad ambiental regional</small></span></label>
+                <label class="opt"><input type="radio" name="licencia" value="no"><span>No</span></label>
+                <label class="opt"><input type="radio" name="licencia" value="nose"><span>No lo sé todavía</span></label>
+              </div>
+            </fieldset>
+            <fieldset class="quiz__q" data-q="suelo" hidden>
+              <legend>¿La obra va a remover suelo?</legend>
+              <div class="quiz__opts">
+                <label class="opt"><input type="radio" name="suelo" value="si"><span>Sí<small>Excavaciones, cimentaciones, movimiento de tierra</small></span></label>
+                <label class="opt"><input type="radio" name="suelo" value="no"><span>No<small>Solo adecuaciones sobre lo construido</small></span></label>
+              </div>
+            </fieldset>
+            <div class="quiz__result" data-quiz-result hidden tabindex="-1">
+              <p class="quiz__verdict" data-quiz-verdict></p>
+              <p class="quiz__detail" data-quiz-detail></p>
+              <p class="quiz__fine">Orientación general, no concepto jurídico. Lo confirmamos contigo sin costo.</p>
+            </div>
+          </div>
+          <div class="quiz__nav">
+            <button class="quiz__back" type="button" data-quiz-back hidden><svg class="icon" aria-hidden="true"><use href="#i-chev-l"/></svg>Atrás</button>
+            <a class="btn btn--light" href="#contacto" data-quiz-cta>Solicitar cotización <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+          </div>
+        </form>
       </div>
     </section>
 
@@ -755,7 +1182,7 @@
     <section class="section" id="contacto" aria-labelledby="contacto-title">
       <div class="container contact">
         <div class="contact__info" data-reveal>
-          <p class="eyebrow">12 — Contacto</p>
+          <p class="eyebrow">13 — Contacto</p>
           <h2 class="h2" id="contacto-title">Escríbenos o visítanos en El Rosario</h2>
           <ul class="contact__list">
             <li><svg class="icon" aria-hidden="true"><use href="#i-pin"/></svg><span>Carrera 57 # 46 C 14, El Rosario<br>Itagüí, Antioquia · C.P. 055412</span></li>
@@ -843,10 +1270,10 @@
         <p class="footer__head">Secciones</p>
         <ul>
           <li><a href="#nosotros">Nosotros</a></li>
-          <li><a href="perfiles.html">Perfiles profesionales</a></li>
           <li><a href="#servicios">Servicios</a></li>
           <li><a href="#proyectos">Hallazgos</a></li>
           <li><a href="#museo">Museo</a></li>
+          <li><a href="#equipo">Equipo</a></li>
           <li><a href="#noticias">Prensa</a></li>
           <li><a href="galeria.html">Galería</a></li>
         </ul>
@@ -900,7 +1327,7 @@
     <nav aria-label="Menú móvil">
       <ul class="drawer__links">
         <li><a href="#nosotros">Nosotros</a></li>
-        <li><a href="perfiles.html">Perfiles</a></li>
+        <li><a href="#equipo">Equipo</a></li>
         <li><a href="#servicios">Servicios</a></li>
         <li><a href="#proyectos">Hallazgos</a></li>
         <li><a href="#museo">Museo</a></li>

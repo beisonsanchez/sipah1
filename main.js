@@ -29,6 +29,7 @@
     if (lockCount++ > 0) return;
     const sw = window.innerWidth - document.documentElement.clientWidth;
     document.body.style.overflow = 'hidden';
+    document.documentElement.classList.add('is-locked');
     if (sw > 0) document.body.style.paddingRight = `${sw}px`;
   }
   function unlockScroll() {
@@ -36,6 +37,7 @@
     lockCount = 0;
     document.body.style.overflow = '';
     document.body.style.paddingRight = '';
+    document.documentElement.classList.remove('is-locked');
   }
 
   /* Focus trap mínimo para diálogos */
@@ -666,7 +668,8 @@
     // Móvil: la barra de estado toma el color de lo que hay arriba (foto oscura → arena)
     if (themeMeta && compact !== themeIsLight) {
       themeIsLight = compact;
-      themeMeta.content = compact ? '#F3EEE3' : '#17150F';
+      // En modo oscuro la arena es oscura: se lee del token, no de un hex fijo
+      themeMeta.content = compact ? getComputedStyle(document.documentElement).getPropertyValue('--sand').trim() : '#17150F';
     }
     // WhatsApp aparece al terminar el hero para no tapar el indicador de fotos
     if (waBtn) waBtn.classList.toggle('is-away', y < heroEnd - vh * 0.2);
@@ -1000,7 +1003,8 @@
       if (!data || isOpen) return;
       isOpen = true;
       opener = btn;
-      card = btn.closest('.project');
+      // Origen de la ficha: la tarjeta, o el propio pin / fila del mapa de hallazgos
+      card = btn.closest('.project') || btn;
       $('[data-sheet-img]', sheet).src = data.img;
       $('[data-sheet-img]', sheet).alt = data.alt;
       $('[data-sheet-meta]', sheet).textContent = data.meta;
@@ -1102,6 +1106,311 @@
     titles.forEach((t) => {
       if (t.hasAttribute('data-split')) requestAnimationFrame(() => t.classList.add('is-in')); // el H1 entra al cargar
       else io.observe(t);
+    });
+  }
+
+  /* 11e. EQUIPO: perfiles profesionales ---------------------------------------
+     · Fotos del sitio oficial con respaldo de iniciales si alguna no carga.
+     · "Ver los 32 perfiles" despliega el resto con un fundido corto; al
+       contraer se compensa el scroll para que el botón no salte bajo el dedo. */
+  function initTeam() {
+    const team = $('[data-team]');
+    if (!team) return;
+    $$('.leader__photo img, .member__photo img', team).forEach((img) => {
+      const miss = () => img.parentElement.classList.add('is-missing');
+      if (img.complete && img.naturalWidth === 0) miss();
+      else img.addEventListener('error', miss, { once: true });
+    });
+
+    const btn = $('[data-team-toggle]', team);
+    const label = $('[data-team-label]', btn);
+    const total = $$('.leader, .member', team).length;
+    btn.addEventListener('click', () => {
+      const open = !team.classList.contains('is-open');
+      const before = btn.getBoundingClientRect().top;
+      team.classList.toggle('is-open', open);
+      btn.setAttribute('aria-expanded', String(open));
+      label.textContent = open ? 'Mostrar menos' : `Ver los ${total} perfiles`;
+      if (open) {
+        if (!reduced) {
+          $$('.is-extra', team).forEach((el, i) => {
+            el.animate(
+              [{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }],
+              { duration: 300, delay: Math.min(i, 10) * 25, easing: EASE_OUT, fill: 'backwards' }
+            );
+          });
+        }
+      } else {
+        // Mantener el botón en el mismo lugar de la pantalla tras contraer
+        window.scrollBy({ top: btn.getBoundingClientRect().top - before, behavior: 'instant' });
+      }
+    });
+  }
+
+  /* 11f. MAPA DE HALLAZGOS ---------------------------------------------------
+     Pin y fila de la lista se iluminan juntos (mapping: el control muestra lo
+     que afecta). Al entrar en pantalla los pines caen en cascada, una sola vez. */
+  function initSites() {
+    const root = $('[data-sites]');
+    if (!root) return;
+    const pins = $$('[data-pin]', root);
+    const rows = $$('[data-site]', root);
+    const hot = (key, on) => {
+      pins.forEach((p) => p.classList.toggle('is-hot', on && p.dataset.pin === key));
+      rows.forEach((r) => r.classList.toggle('is-hot', on && r.dataset.site === key));
+    };
+    [...pins.map((p) => [p, p.dataset.pin]), ...rows.map((r) => [r, r.dataset.site])].forEach(([el, key]) => {
+      el.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse') hot(key, true); });
+      el.addEventListener('pointerleave', () => hot(key, false));
+      el.addEventListener('focus', () => hot(key, true));
+      el.addEventListener('blur', () => hot(key, false));
+    });
+    if (reduced || !('IntersectionObserver' in window)) return;
+    const io = new IntersectionObserver(([en]) => {
+      if (!en.isIntersecting) return;
+      io.disconnect();
+      pins.forEach((p, i) => {
+        $('.pin__n', p).animate(
+          [{ opacity: 0, transform: 'translateY(-10px) scale(0.7)' }, { opacity: 1, transform: 'none' }],
+          { duration: 420, delay: 250 + i * 90, easing: 'cubic-bezier(0.34, 1.4, 0.64, 1)', fill: 'backwards' }
+        );
+      });
+    }, { threshold: 0.35 });
+    io.observe($('.sites__map', root));
+  }
+
+  /* 11g. EXCAVACIÓN INTERACTIVA: raspar la tierra sobre el petroglifo ---------
+     Un canvas pinta una capa de suelo con los colores Munsell del sitio. El
+     dedo o el cursor la retiran 1:1 (pincel suave, trazo continuo entre
+     eventos). Al despejar ~50% el resto se desvanece y el gesto se libera.
+     "Descubrir todo" hace lo mismo para teclado y lectores de pantalla. */
+  function initDig() {
+    const fig = $('[data-dig]');
+    if (!fig) return;
+    const wrap = $('.dig', fig);
+    const canvas = $('[data-dig-canvas]', fig);
+    const allBtn = $('[data-dig-all]', fig);
+    const ctx = canvas.getContext && canvas.getContext('2d', { willReadFrequently: true });
+    if (!ctx) return;
+    let w = 0, dpr = 1, done = false, started = false, last = null, pid = null, moves = 0;
+
+    function paintSoil() {
+      const r = wrap.getBoundingClientRect();
+      if (!r.width) return;
+      dpr = Math.min(2, window.devicePixelRatio || 1);
+      w = r.width;
+      const h = r.height;
+      canvas.width = Math.round(w * dpr);
+      canvas.height = Math.round(h * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.globalCompositeOperation = 'source-over';
+      const g = ctx.createLinearGradient(0, 0, 0, h);
+      g.addColorStop(0, '#8A6240'); g.addColorStop(0.5, '#A47B4F'); g.addColorStop(1, '#5C4430');
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, w, h);
+      // Grano y gravilla con semilla fija: la tierra es igual en cada visita
+      let seed = 7;
+      const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+      const colors = ['#4A3728', '#C9AE84', '#DDD3BD', '#7A5534', '#A47B4F'];
+      for (let i = 0, n = Math.round((w * h) / 70); i < n; i++) {
+        ctx.globalAlpha = 0.2 + rnd() * 0.5;
+        ctx.fillStyle = colors[i % colors.length];
+        const s = 0.6 + rnd() * 2;
+        ctx.fillRect(rnd() * w, rnd() * h, s, s);
+      }
+      for (let i = 0, n = Math.round((w * h) / 7000); i < n; i++) {
+        ctx.globalAlpha = 0.55;
+        ctx.fillStyle = colors[1 + (i % 2)];
+        ctx.beginPath();
+        ctx.ellipse(rnd() * w, rnd() * h, 2 + rnd() * 5, 1.5 + rnd() * 3, rnd() * Math.PI, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    function scratch(x, y) {
+      ctx.globalCompositeOperation = 'destination-out';
+      const r = Math.max(22, w * 0.065);
+      const from = last || { x, y };
+      const steps = Math.max(1, Math.ceil(Math.hypot(x - from.x, y - from.y) / (r * 0.3)));
+      for (let i = 1; i <= steps; i++) {
+        const px = from.x + ((x - from.x) * i) / steps;
+        const py = from.y + ((y - from.y) * i) / steps;
+        const grad = ctx.createRadialGradient(px, py, r * 0.3, px, py, r);
+        grad.addColorStop(0, 'rgba(0,0,0,1)');
+        grad.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(px, py, r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      last = { x, y };
+    }
+
+    // Proporción despejada, muestreando 1 de cada 24 píxeles
+    function cleared() {
+      const d = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+      let clear = 0, total = 0;
+      for (let i = 3; i < d.length; i += 96) { total++; if (d[i] < 40) clear++; }
+      return total ? clear / total : 0;
+    }
+
+    function finish() {
+      if (done) return;
+      done = true;
+      wrap.classList.add('is-done');
+      if (navigator.vibrate) navigator.vibrate(12); // cierre del gesto: un toque, mismo frame que el fundido
+      setTimeout(() => { allBtn.hidden = true; }, 300);
+    }
+
+    const point = (e) => {
+      const r = canvas.getBoundingClientRect();
+      return [e.clientX - r.left, e.clientY - r.top];
+    };
+    canvas.addEventListener('pointerdown', (e) => {
+      if (done || pid !== null || e.button > 0) return;
+      pid = e.pointerId;
+      try { canvas.setPointerCapture(pid); } catch { /* puntero ya liberado */ }
+      started = true;
+      wrap.classList.add('is-digging');
+      last = null;
+      scratch(...point(e)); // respuesta inmediata en pointer-down
+    });
+    canvas.addEventListener('pointermove', (e) => {
+      if (e.pointerId !== pid) return;
+      scratch(...point(e));
+      if (++moves % 12 === 0 && cleared() > 0.5) finish();
+    });
+    const end = (e) => {
+      if (e.pointerId !== pid) return;
+      pid = null;
+      last = null;
+      if (!done && cleared() > 0.5) finish();
+    };
+    canvas.addEventListener('pointerup', end);
+    canvas.addEventListener('pointercancel', end);
+    allBtn.addEventListener('click', () => {
+      finish();
+      fig.tabIndex = -1;
+      fig.focus({ preventScroll: true }); // el botón desaparece: el foco pasa a la figura
+    });
+
+    paintSoil();
+    wrap.classList.add('is-ready');
+    // Si cambia el ancho: se repinta si nadie ha raspado; si ya empezó, se descubre
+    let lastW = w;
+    new ResizeObserver(() => {
+      if (done) return;
+      const nw = wrap.getBoundingClientRect().width;
+      if (Math.abs(nw - lastW) < 1) return;
+      lastW = nw;
+      if (started) finish(); else paintSoil();
+    }).observe(wrap);
+  }
+
+  /* 11h. ASISTENTE ICANH: "¿Necesito arqueología preventiva?" ---------------
+     Tres preguntas, una por pantalla. Con el puntero avanza al elegir; con
+     teclado las flechas eligen (sin avanzar) y Enter avanza. Cada paso entra
+     desde el lado hacia el que se avanza y vuelve por el mismo camino. Al
+     final, "Solicitar cotización" rellena el formulario con las respuestas. */
+  function initQuiz() {
+    const quiz = $('[data-quiz]');
+    if (!quiz) return;
+    const steps = $$('[data-q]', quiz);
+    const result = $('[data-quiz-result]', quiz);
+    const panes = [...steps, result];
+    const stepLabel = $('[data-quiz-step]', quiz);
+    const bar = $('[data-quiz-bar]', quiz);
+    const back = $('[data-quiz-back]', quiz);
+    const cta = $('[data-quiz-cta]', quiz);
+    const answers = {};
+    let cur = 0, advanceT = 0;
+
+    const LABEL = { si: 'Sí', no: 'No', nose: 'No lo sé' };
+    function verdict(a) {
+      if (a.licencia === 'si') return {
+        title: 'Sí: necesitas un Programa de Arqueología Preventiva',
+        detail: 'Los proyectos que requieren licencia ambiental deben tener un programa aprobado por el ICANH antes de intervenir el suelo. Lo formulamos, lo radicamos y lo ejecutamos con nuestro equipo y laboratorio.',
+        tipo: /pública/.test(a.obra || '') ? 'Arqueología preventiva / obra pública' : 'Arqueología preventiva / obra privada',
+      };
+      if (a.suelo === 'no') return {
+        title: 'Probablemente no lo necesites',
+        detail: 'Si la obra no remueve suelo, el riesgo de afectar patrimonio arqueológico es bajo. Si el predio está en una zona de interés del POT, conviene confirmarlo.',
+        tipo: 'Diagnóstico de potencial arqueológico',
+      };
+      if (a.licencia === 'nose') return {
+        title: 'Revisémoslo juntos',
+        detail: 'Depende de si la obra necesita licencia ambiental. Con la ubicación y el alcance te decimos qué aplica en tu caso.',
+        tipo: 'Diagnóstico de potencial arqueológico',
+      };
+      return {
+        title: 'Recomendable: un diagnóstico de potencial arqueológico',
+        detail: 'Aunque no requiera licencia ambiental, una obra que remueve suelo puede encontrar evidencias. Si aparecen, hay que avisar al ICANH y la intervención puede tener que suspenderse; un diagnóstico previo evita esa sorpresa.',
+        tipo: 'Diagnóstico de potencial arqueológico',
+      };
+    }
+
+    function show(next) {
+      if (next === cur) return;
+      const dir = next > cur ? 1 : -1;
+      const from = panes[cur], to = panes[next];
+      cur = next;
+      from.getAnimations().forEach((a) => a.cancel());
+      from.hidden = true;
+      to.hidden = false;
+      to.animate(
+        reduced
+          ? [{ opacity: 0 }, { opacity: 1 }]
+          : [{ opacity: 0, transform: `translateX(${dir * 28}px)` }, { opacity: 1, transform: 'none' }],
+        { duration: reduced ? 150 : 300, easing: EASE_OUT }
+      );
+      const total = steps.length;
+      stepLabel.textContent = next < total ? `Paso ${next + 1} de ${total}` : 'Resultado';
+      bar.style.transform = `scaleX(${Math.min(1, (next + 1) / total)})`;
+      back.hidden = next === 0;
+      if (next === total) {
+        const v = verdict(answers);
+        $('[data-quiz-verdict]', quiz).textContent = v.title;
+        $('[data-quiz-detail]', quiz).textContent = v.detail;
+        result.focus({ preventScroll: true });
+      } else if (quiz.contains(document.activeElement) && document.activeElement.type === 'radio') {
+        ($('input:checked', to) || $('input', to)).focus({ preventScroll: true });
+      }
+    }
+
+    quiz.addEventListener('change', (e) => {
+      if (e.target.type === 'radio') answers[e.target.name] = e.target.value;
+    });
+    // detail > 0 = clic real de puntero (las flechas del teclado también disparan click, con detail 0)
+    quiz.addEventListener('click', (e) => {
+      const input = e.target.closest('input[type="radio"]');
+      if (!input || e.detail === 0) return;
+      clearTimeout(advanceT);
+      advanceT = setTimeout(() => show(cur + 1), reduced ? 0 : 220); // se ve la selección antes de avanzar
+    });
+    quiz.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' || e.target.type !== 'radio') return;
+      e.preventDefault();
+      if (answers[e.target.name]) show(cur + 1);
+    });
+    quiz.addEventListener('submit', (e) => e.preventDefault());
+    back.addEventListener('click', () => { clearTimeout(advanceT); show(Math.max(0, cur - 1)); });
+
+    cta.addEventListener('click', () => {
+      if (!answers.obra) return; // sin respuestas: solo lleva al formulario
+      const v = verdict(answers);
+      const tipo = $('#f-tipo');
+      const msg = $('#f-mensaje');
+      if (cur === steps.length && tipo) tipo.value = v.tipo;
+      if (msg && !msg.value.trim()) {
+        msg.value = [
+          `Obra: ${answers.obra}.`,
+          answers.licencia ? `Licencia ambiental: ${LABEL[answers.licencia]}.` : '',
+          answers.suelo ? `Remueve suelo: ${LABEL[answers.suelo]}.` : '',
+          'Ubicación del proyecto: ',
+        ].filter(Boolean).join('\n');
+      }
+      toast({ title: 'Formulario adelantado', description: 'Pasamos tus respuestas a la solicitud. Completa tus datos y la ubicación.' });
     });
   }
 
@@ -1428,6 +1737,10 @@
     initTimelineDrag();
     initProjectSheet();
     initSplitTitles();
+    initTeam();
+    initSites();
+    initDig();
+    initQuiz();
     initToaster();
     initForm();
     setupTimeline();
