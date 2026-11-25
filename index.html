@@ -170,6 +170,13 @@
       <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></symbol>
       <symbol id="i-pause" viewBox="0 0 24 24"><path fill="currentColor" stroke="none" d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z"/></symbol>
       <symbol id="i-play" viewBox="0 0 24 24"><path fill="currentColor" stroke="none" d="M8 5.5v13a.8.8 0 0 0 1.2.7l10.4-6.5a.8.8 0 0 0 0-1.4L9.2 4.8A.8.8 0 0 0 8 5.5z"/></symbol>
+      <!-- Petroglifos: los mismos motivos grabados del video del hero.
+           pathLength="1" permite "grabarlos" con stroke-dashoffset de 1 a 0. -->
+      <symbol id="i-p-spiral" viewBox="0 0 24 24"><path pathLength="1" d="M11.1 12.0 L11.0 11.8 11.0 11.5 11.0 11.2 11.2 10.9 11.4 10.6 11.7 10.4 12.1 10.2 12.5 10.2 13.0 10.3 13.5 10.5 13.9 10.8 14.2 11.2 14.5 11.7 14.6 12.3 14.6 13.0 14.4 13.6 14.0 14.2 13.5 14.7 12.9 15.1 12.2 15.4 11.3 15.4 10.5 15.3 9.7 15.0 9.0 14.4 8.4 13.7 8.0 12.9 7.8 11.9 7.8 10.9 8.1 9.9 8.5 9.0 9.3 8.2 10.2 7.5 11.2 7.1 12.4 6.9 13.6 7.1 14.8 7.5 15.8 8.1 16.7 9.1 17.4 10.2 17.8 11.5 17.9 12.8 17.6 14.2 17.1 15.5 16.2 16.7 15.0 17.7 13.7 18.3 12.2 18.7 10.6 18.7 9.1 18.3 7.6 17.5 6.4 16.4 5.4 15.0 4.7 13.5 4.5 11.7 4.6 10.0 5.2 8.3 6.1 6.7 7.5 5.4 9.1 4.4 10.9 3.8 12.8 3.6 14.8 3.9 16.6 4.7 18.3 5.9 19.6 7.4 20.6 9.3 21.1 11.3 21.1 13.5 20.7 15.6 19.7 17.6"/></symbol>
+      <symbol id="i-p-rings" viewBox="0 0 24 24"><circle pathLength="1" cx="12" cy="12" r="9"/><circle pathLength="1" cx="12" cy="12" r="5.6"/><circle pathLength="1" cx="12" cy="12" r="2.2"/></symbol>
+      <symbol id="i-p-human" viewBox="0 0 24 24"><circle pathLength="1" cx="12" cy="4.8" r="2.4"/><path pathLength="1" d="M12 7.2V15M5.5 7.5 8 11h8l2.5-3.5M12 15l-3.6 6M12 15l3.6 6"/></symbol>
+      <symbol id="i-p-zigzag" viewBox="0 0 24 24"><path pathLength="1" d="M2 15.5 6 8.5l4 7 4-7 4 7 4-7"/></symbol>
+      <symbol id="i-p-strata" viewBox="0 0 24 24"><path pathLength="1" d="M3 6.5c3-1.6 6 1.6 9 0s6-1.6 9 0M3 12c3-1.6 6 1.6 9 0s6-1.6 9 0M3 17.5c3-1.6 6 1.6 9 0s6-1.6 9 0"/></symbol>
       <symbol id="i-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.5v.01"/></symbol>
       <!-- Servicios -->
       <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></symbol>
@@ -1449,21 +1456,52 @@
     <svg aria-hidden="true"><use href="#i-whatsapp"/></svg>
   </a>
 
+  <!-- ============ TESTIGO DE PERFORACIÓN (móvil y tablet) ============
+       Columna de suelo en el borde derecho: cada capa es una sección, con su
+       alto real. Marca la profundidad mientras se baja y, al arrastrar el dedo
+       sobre ella, salta de sección. Atajo de puntero: la navegación accesible
+       está en la barra inferior y en el menú. main.js lo construye. -->
+  <div class="core" aria-hidden="true" data-core hidden>
+    <div class="core__column" data-core-column><span class="core__marker" data-core-marker></span></div>
+    <p class="core__label"><span data-core-depth>0,00 m</span><span data-core-name>Inicio</span></p>
+  </div>
+
+  <!-- ============ BARRA INFERIOR (móvil y tablet) ============
+       En el teléfono el pulgar vive abajo: accesos con íconos de petroglifo,
+       "Más" abre el menú completo y "Cotizar" ofrece formulario o WhatsApp.
+       Reemplaza al botón del menú de arriba y a la burbuja de WhatsApp. -->
+  <nav class="tabbar" aria-label="Accesos rápidos" data-tabbar>
+    <a class="tabbar__item" href="#servicios" data-tab="servicios"><svg class="icon glyph" aria-hidden="true"><use href="#i-p-spiral"/></svg><span>Servicios</span></a>
+    <a class="tabbar__item" href="#proyectos" data-tab="proyectos"><svg class="icon glyph" aria-hidden="true"><use href="#i-p-rings"/></svg><span>Hallazgos</span></a>
+    <a class="tabbar__item" href="#equipo" data-tab="equipo"><svg class="icon glyph" aria-hidden="true"><use href="#i-p-human"/></svg><span>Equipo</span></a>
+    <button class="tabbar__item" type="button" aria-controls="drawer" aria-expanded="false" data-drawer-open><svg class="icon glyph" aria-hidden="true"><use href="#i-p-strata"/></svg><span>Más</span></button>
+    <div class="tabbar__quote">
+      <button class="tabbar__cta" type="button" aria-expanded="false" aria-controls="quote-menu" data-quote-toggle>Cotizar</button>
+      <div class="quote-menu" id="quote-menu" data-quote-menu hidden>
+        <a class="quote-menu__item" href="#contacto" data-track="Barra: formulario"><svg class="icon" aria-hidden="true"><use href="#i-mail"/></svg><span><strong>Formulario de cotización</strong><small>Respondemos en 2 días hábiles</small></span></a>
+        <a class="quote-menu__item" href="https://wa.me/573006345648?text=Hola%20SIPAH%2C%20quiero%20informaci%C3%B3n%20sobre%20un%20estudio%20arqueol%C3%B3gico." target="_blank" rel="noopener"><svg class="icon" aria-hidden="true"><use href="#i-whatsapp"/></svg><span><strong>WhatsApp</strong><small>300 634 5648</small></span></a>
+      </div>
+    </div>
+  </nav>
+
   <!-- ============ DRAWER MÓVIL (estilo Vaul) ============ -->
   <div class="drawer-overlay" data-drawer-overlay hidden></div>
   <div class="drawer" id="drawer" role="dialog" aria-modal="true" aria-label="Menú" data-drawer hidden>
     <div class="drawer__handle" aria-hidden="true"></div>
     <nav aria-label="Menú móvil">
-      <ul class="drawer__links">
-        <li><a href="#nosotros">Nosotros</a></li>
-        <li><a href="#equipo">Equipo</a></li>
-        <li><a href="#servicios">Servicios</a></li>
-        <li><a href="#proyectos">Hallazgos</a></li>
-        <li><a href="#museo">Museo</a></li>
-        <li><a href="#noticias">Prensa</a></li>
-        <li><a href="galeria.html">Galería</a></li>
-        <li><a href="#contacto">Contacto</a></li>
-      </ul>
+      <!-- Perfil estratigráfico: cada sección es una capa; la profundidad la
+           calcula main.js con el mismo modelo del testigo de perforación. -->
+      <ol class="drawer__links drawer__links--strata">
+        <li style="--layer:0"><a href="#nosotros"><span class="drawer__n">01</span>Nosotros<span class="drawer__depth" data-depth-for="nosotros"></span></a></li>
+        <li style="--layer:1"><a href="#servicios"><span class="drawer__n">02</span>Servicios<span class="drawer__depth" data-depth-for="servicios"></span></a></li>
+        <li style="--layer:2"><a href="#proyectos"><span class="drawer__n">04</span>Hallazgos<span class="drawer__depth" data-depth-for="proyectos"></span></a></li>
+        <li style="--layer:3"><a href="#museo"><span class="drawer__n">07</span>Museo<span class="drawer__depth" data-depth-for="museo"></span></a></li>
+        <li style="--layer:4"><a href="#equipo"><span class="drawer__n">09</span>Equipo<span class="drawer__depth" data-depth-for="equipo"></span></a></li>
+        <li style="--layer:5"><a href="#noticias"><span class="drawer__n">11</span>Prensa<span class="drawer__depth" data-depth-for="noticias"></span></a></li>
+        <li style="--layer:6"><a href="#preguntas"><span class="drawer__n">13</span>Preguntas<span class="drawer__depth" data-depth-for="preguntas"></span></a></li>
+        <li style="--layer:7"><a href="#contacto"><span class="drawer__n">14</span>Contacto<span class="drawer__depth" data-depth-for="contacto"></span></a></li>
+        <li style="--layer:8"><a href="galeria.html"><span class="drawer__n">↗</span>Galería<span class="drawer__depth">Archivo</span></a></li>
+      </ol>
     </nav>
     <a class="btn btn--primary btn--block" href="#contacto">Solicitar cotización</a>
     <button class="drawer__close" type="button" data-drawer-close>Cerrar</button>

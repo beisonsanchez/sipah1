@@ -692,11 +692,16 @@
     if (waBtn) waBtn.classList.toggle('is-away', y < heroH * 0.5);
     // El indicador de scroll ya cumplió su función en cuanto se baja un poco
     heroEl.classList.toggle('is-scrolled', y > 24);
+    // Testigo de perforación: aparece al empezar la "excavación"
+    if (coreEl) coreEl.classList.toggle('is-away', y < heroH * 0.5);
     const delta = y - lastY;
     const navLocked = drawerOpen || nav.contains(document.activeElement);
     if (!navLocked && delta > 6 && y > vh * 0.6) nav.classList.add('is-hidden');
     else if (delta < -6 || y < vh * 0.6 || navLocked) nav.classList.remove('is-hidden');
     if (Math.abs(delta) > 6) lastY = y;
+    // La barra inferior acompaña al nav: se va al bajar y vuelve al subir
+    if (tabbar) tabbar.classList.toggle('is-hidden', nav.classList.contains('is-hidden') && !quoteOpen && !drawerOpen);
+    updateCore(y, vh, max + vh);
 
     // Línea de tiempo horizontal
     if (timeline.classList.contains('is-pinned')) {
@@ -811,6 +816,217 @@
       f.focus({ preventScroll: true });
       trackEvent('Mapa interactivo');
     }, { once: true });
+  }
+
+  /* 05d. TESTIGO DE PERFORACIÓN ---------------------------------------------
+     Una columna de suelo en el borde derecho (móvil y tablet). Cada capa es una
+     sección de <main> con su alto real y un color Munsell según su profundidad.
+     · Al hacer scroll, el marcador baja y una etiqueta dice "−1,85 m · Hallazgos".
+     · Arrastrar el dedo sobre la columna recorre las capas 1:1 (con un toque de
+       vibración en Android al cambiar de capa) y al soltar salta a esa sección.
+     · El mismo modelo de profundidad tiñe las secciones (--depth) y rotula el menú. */
+  const coreEl = $('[data-core]');
+  const coreCol = coreEl && $('[data-core-column]', coreEl);
+  const coreMarker = coreEl && $('[data-core-marker]', coreEl);
+  const coreDepthEl = coreEl && $('[data-core-depth]', coreEl);
+  const coreNameEl = coreEl && $('[data-core-name]', coreEl);
+  const CORE_DEPTH = 4.2; // metros simbólicos de toda la página
+  const SOIL = ['#DDD3BD', '#C9AE84', '#A47B4F', '#7A5534', '#4A3728']; // Munsell, de arriba a abajo
+  const fmtDepth = new Intl.NumberFormat('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  let coreLayers = [], coreTotal = 1, coreColH = 0, coreIdx = -1, coreTimer = 0, coreScrubbing = false;
+
+  const hexToRgb = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+  function soilAt(t, shade = 0) {
+    const x = clamp(t) * (SOIL.length - 1);
+    const i = Math.min(SOIL.length - 2, Math.floor(x));
+    const f = x - i;
+    const a = hexToRgb(SOIL[i]), b = hexToRgb(SOIL[i + 1]);
+    return `rgb(${a.map((v, k) => Math.round((v + (b[k] - v) * f) * (1 - shade))).join(' ')})`;
+  }
+  // Nombre de la capa: el rótulo de la sección ("04 — Hallazgos" → "Hallazgos") o su título
+  function layerName(sec) {
+    if (sec === heroEl) return 'Inicio';
+    const eb = $('.eyebrow', sec);
+    const txt = eb ? eb.textContent.split('—').pop().trim() : '';
+    if (txt) return txt.charAt(0).toUpperCase() + txt.slice(1).toLowerCase();
+    const h = $('h2', sec);
+    return sec.getAttribute('aria-label') || (h ? h.textContent.trim() : '');
+  }
+  const depthLabel = (ratio) => `−${fmtDepth.format(ratio * CORE_DEPTH)} m`;
+
+  function layoutCore() {
+    const docH = document.documentElement.scrollHeight;
+    const secs = $$('main > section');
+    coreLayers = secs.map((el) => ({ el, id: el.id, name: layerName(el), top: el.getBoundingClientRect().top + window.scrollY, h: el.offsetHeight }));
+    coreTotal = coreLayers.reduce((a, l) => a + l.h, 0) || 1;
+    // Profundidad de cada sección: tiñe el fondo (CSS) y rotula el menú
+    coreLayers.forEach((l) => l.el.style.setProperty('--depth', (l.top / docH).toFixed(3)));
+    $$('[data-depth-for]').forEach((el) => {
+      const l = coreLayers.find((x) => x.id === el.dataset.depthFor);
+      if (l) el.textContent = depthLabel(l.top / docH);
+    });
+    if (!coreEl) return;
+    $$('.core__seg', coreCol).forEach((n) => n.parentNode.removeChild(n));
+    coreLayers.forEach((l, i) => {
+      const seg = document.createElement('span');
+      seg.className = 'core__seg';
+      seg.style.flexGrow = String(l.h);
+      // Capas alternas un poco más oscuras: se leen como estratos, no como degradado
+      seg.style.background = soilAt(l.top / docH, i % 2 ? 0.07 : 0);
+      coreCol.insertBefore(seg, coreMarker);
+    });
+    coreColH = coreCol.offsetHeight;
+    coreIdx = -1;
+  }
+
+  // Posición en la columna (px) a partir de una capa y el avance dentro de ella
+  function coreY(i, local) {
+    let cum = 0;
+    for (let j = 0; j < i; j++) cum += coreLayers[j].h;
+    return ((cum + local * coreLayers[i].h) / coreTotal) * coreColH;
+  }
+  function setCoreLabel(i, ratio) {
+    if (i !== coreIdx) { coreIdx = i; coreNameEl.textContent = coreLayers[i].name; }
+    coreDepthEl.textContent = depthLabel(ratio);
+  }
+
+  function updateCore(y, vh, docH) {
+    if (!coreEl || !coreLayers.length || coreScrubbing || !coreColH) return;
+    const probe = y + vh * 0.4;
+    let i = 0;
+    while (i < coreLayers.length - 1 && coreLayers[i + 1].top <= probe) i++;
+    const local = clamp((probe - coreLayers[i].top) / coreLayers[i].h);
+    coreEl.style.setProperty('--y', `${coreY(i, local).toFixed(1)}px`);
+    setCoreLabel(i, clamp(probe / docH));
+    // La etiqueta solo acompaña mientras hay movimiento
+    coreEl.classList.add('is-active');
+    clearTimeout(coreTimer);
+    coreTimer = setTimeout(() => coreEl.classList.remove('is-active'), 900);
+  }
+
+  function initCore() {
+    if (!coreEl) return;
+    coreEl.hidden = false;
+    layoutCore();
+    let rt = 0;
+    const relayout = () => { clearTimeout(rt); rt = setTimeout(() => { layoutCore(); update(); }, 150); };
+    window.addEventListener('resize', relayout, { passive: true });
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(relayout);
+    window.addEventListener('load', relayout);
+    // Contenido que cambia de alto (equipo desplegado, imágenes): se recalcula
+    if ('ResizeObserver' in window) new ResizeObserver(relayout).observe($('main'));
+
+    // Arrastre sobre el testigo: 1:1 con el dedo, salto a la capa al soltar
+    let pid = null, target = 0;
+    const pick = (clientY) => {
+      const r = coreCol.getBoundingClientRect();
+      const pos = clamp((clientY - r.top) / r.height) * coreTotal;
+      let i = 0, cum = 0;
+      while (i < coreLayers.length - 1 && cum + coreLayers[i].h < pos) { cum += coreLayers[i].h; i++; }
+      const local = clamp((pos - cum) / coreLayers[i].h);
+      if (i !== target && navigator.vibrate) navigator.vibrate(6); // cada capa se "siente" al cruzarla
+      target = i;
+      coreEl.style.setProperty('--y', `${coreY(i, local).toFixed(1)}px`);
+      setCoreLabel(i, coreLayers[i].top / document.documentElement.scrollHeight);
+    };
+    coreEl.addEventListener('pointerdown', (e) => {
+      if (pid !== null || coreEl.classList.contains('is-away')) return;
+      pid = e.pointerId;
+      try { coreEl.setPointerCapture(pid); } catch { /* puntero ya liberado */ }
+      coreScrubbing = true;
+      target = -1;
+      clearTimeout(coreTimer);
+      coreEl.classList.add('is-active', 'is-scrubbing');
+      pick(e.clientY); // respuesta en pointer-down, no al soltar
+    });
+    coreEl.addEventListener('pointermove', (e) => { if (e.pointerId === pid) pick(e.clientY); });
+    const end = (e) => {
+      if (e.pointerId !== pid) return;
+      pid = null;
+      coreScrubbing = false;
+      coreEl.classList.remove('is-scrubbing');
+      const l = coreLayers[Math.max(0, target)];
+      window.scrollTo({ top: Math.max(0, l.top - 8), behavior: reduced ? 'auto' : 'smooth' });
+      trackEvent('Testigo: salto', { seccion: l.name });
+    };
+    coreEl.addEventListener('pointerup', end);
+    coreEl.addEventListener('pointercancel', end);
+  }
+
+  /* 05e. BARRA INFERIOR -------------------------------------------------------
+     Pestaña activa según la sección visible; "Cotizar" abre un menú que nace
+     del botón (formulario o WhatsApp) y se cierra al tocar fuera, con Escape
+     o al elegir. */
+  const tabbar = $('[data-tabbar]');
+  let quoteOpen = false;
+  let closeQuoteMenu = () => {}; // lo asigna initTabbar; el drawer lo usa al abrirse
+  function initTabbar() {
+    if (!tabbar) return;
+    const tabs = $$('[data-tab]', tabbar);
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((en) => {
+        const t = tabs.find((x) => x.dataset.tab === en.target.id);
+        if (!t) return;
+        if (en.isIntersecting) { tabs.forEach((x) => x.removeAttribute('aria-current')); t.setAttribute('aria-current', 'true'); }
+        else t.removeAttribute('aria-current');
+      });
+    }, { rootMargin: '-40% 0px -55% 0px' });
+    tabs.forEach((t) => { const sec = document.getElementById(t.dataset.tab); if (sec) io.observe(sec); });
+
+    const qBtn = $('[data-quote-toggle]', tabbar);
+    const qMenu = $('[data-quote-menu]', tabbar);
+    function openQuote() {
+      if (quoteOpen) return;
+      quoteOpen = true;
+      qMenu.hidden = false;
+      qBtn.setAttribute('aria-expanded', 'true');
+      qMenu.getAnimations().forEach((a) => a.cancel());
+      qMenu.animate(
+        reduced ? [{ opacity: 0 }, { opacity: 1 }] : [{ opacity: 0, transform: 'translateY(8px) scale(0.92)' }, { opacity: 1, transform: 'none' }],
+        { duration: reduced ? 120 : 240, easing: EASE_OUT }
+      );
+      $('a', qMenu).focus({ preventScroll: true });
+      trackEvent('Barra: cotizar');
+    }
+    function closeQuote(restore = false) {
+      if (!quoteOpen) return;
+      quoteOpen = false;
+      qBtn.setAttribute('aria-expanded', 'false');
+      const a = qMenu.animate(
+        reduced ? [{ opacity: 1 }, { opacity: 0 }] : [{ opacity: 1, transform: 'none' }, { opacity: 0, transform: 'translateY(4px) scale(0.96)' }],
+        { duration: 140, easing: 'ease-in' }
+      );
+      a.onfinish = () => { if (!quoteOpen) qMenu.hidden = true; };
+      if (restore) qBtn.focus({ preventScroll: true });
+    }
+    qBtn.addEventListener('click', () => (quoteOpen ? closeQuote() : openQuote()));
+    qMenu.addEventListener('click', (e) => { if (e.target.closest('a')) closeQuote(); });
+    document.addEventListener('pointerdown', (e) => { if (quoteOpen && !(e.target.closest && e.target.closest('.tabbar__quote'))) closeQuote(); }, { passive: true });
+    tabbar.addEventListener('keydown', (e) => { if (e.key === 'Escape' && quoteOpen) { e.preventDefault(); closeQuote(true); } });
+    // Con teclado: salir del menú con Tab lo cierra (sin robar el foco)
+    $('.tabbar__quote', tabbar).addEventListener('focusout', (e) => {
+      if (quoteOpen && !(e.relatedTarget && e.relatedTarget.closest('.tabbar__quote'))) closeQuote();
+    });
+    closeQuoteMenu = () => closeQuote();
+  }
+
+  /* 05f. PETROGLIFOS EN LOS RÓTULOS -------------------------------------------
+     Cada rótulo de sección lleva uno de los motivos grabados del video
+     (espiral, círculos, zigzag, figura humana, estratos), que se "graba" con
+     stroke-dashoffset la primera vez que entra en pantalla. */
+  function initGlyphs() {
+    const GLYPHS = ['spiral', 'rings', 'zigzag', 'human', 'strata'];
+    const els = $$('main .eyebrow').filter((el) => !el.closest('.hero, .voice') && !el.classList.contains('has-glyph'));
+    els.forEach((el, i) => {
+      el.insertAdjacentHTML('afterbegin', `<svg class="icon glyph" aria-hidden="true" focusable="false"><use href="#i-p-${GLYPHS[i % GLYPHS.length]}"/></svg>`);
+      el.classList.add('has-glyph');
+      if (getComputedStyle(el).textAlign === 'center') el.classList.add('is-centered');
+    });
+    if (reduced || !('IntersectionObserver' in window)) { els.forEach((el) => el.classList.add('is-drawn')); return; }
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((en) => { if (en.isIntersecting) { en.target.classList.add('is-drawn'); io.unobserve(en.target); } });
+    }, { threshold: 1 });
+    els.forEach((el) => io.observe(el));
   }
 
   /* 06. NAVBAR (aria-current según la sección visible) -------------------- */
@@ -1519,7 +1735,8 @@
      distancia (30%) o por velocidad; hacia arriba aplica fricción. */
   const drawer = $('[data-drawer]');
   const overlay = $('[data-drawer-overlay]');
-  const menuBtn = $('[data-drawer-open]');
+  const menuBtns = $$('[data-drawer-open]'); // botón del nav y "Más" de la barra inferior
+  let drawerOpener = null;                     // el que lo abrió recupera el foco al cerrar
   let drawerOpen = false;
   let drawerTimer = 0;
 
@@ -1543,7 +1760,7 @@
     drawer.hidden = false;
     overlay.hidden = false;
     if (wasHidden) drawerSpring.set(drawerH()); // arranca justo fuera de pantalla
-    menuBtn.setAttribute('aria-expanded', 'true');
+    menuBtns.forEach((b) => b.setAttribute('aria-expanded', 'true'));
     lockScroll();
     if (reduced) drawerSpring.set(0);
     else drawerSpring.to(0, { damping: 1, response: 0.35 }); // apertura por toque: sin rebote
@@ -1553,16 +1770,16 @@
   function closeDrawer({ restoreFocus = true, velocity = 0 } = {}) {
     if (!drawerOpen) return;
     drawerOpen = false;
-    menuBtn.setAttribute('aria-expanded', 'false');
+    menuBtns.forEach((b) => b.setAttribute('aria-expanded', 'false'));
     unlockScroll();
     const hide = () => { drawer.hidden = true; overlay.hidden = true; };
     if (reduced) { drawerSpring.set(drawerH()); hide(); }
     else drawerSpring.to(drawerH(), { velocity, damping: 1, response: 0.3, onRest: hide });
-    if (restoreFocus) menuBtn.focus({ preventScroll: true });
+    if (restoreFocus) (drawerOpener || menuBtns[0]).focus({ preventScroll: true });
   }
 
   function initDrawer() {
-    menuBtn.addEventListener('click', openDrawer);
+    menuBtns.forEach((b) => b.addEventListener('click', () => { drawerOpener = b; closeQuoteMenu(); openDrawer(); }));
     overlay.addEventListener('click', () => closeDrawer());
     $('[data-drawer-close]', drawer).addEventListener('click', () => closeDrawer());
     $$('a', drawer).forEach((a) => a.addEventListener('click', () => closeDrawer({ restoreFocus: false })));
@@ -1835,6 +2052,9 @@
     initTrackedClicks();
     initHeroVideo();
     initMap();
+    initGlyphs();
+    initTabbar();
+    initCore();
     initActiveNav();
     initReveals();
     initProcess();
