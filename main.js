@@ -40,6 +40,46 @@
     document.documentElement.classList.remove('is-locked');
   }
 
+  /* 01a. ANALÍTICA sin cookies (Plausible) --------------------------------
+     Desactivada mientras ANALYTICS_DOMAIN esté vacío: no se carga nada de
+     terceros. Para activarla, crea el sitio en plausible.io (o en una
+     instancia propia compatible) y escribe aquí el dominio definitivo,
+     p. ej. 'sipah.org'. Sin cookies, así que no requiere banner.
+     trackEvent('Nombre', { prop: 'valor' }) registra un evento personalizado. */
+  const ANALYTICS_DOMAIN = ''; // TODO: dominio definitivo del sitio
+  const ANALYTICS_SRC = 'https://plausible.io/js/script.outbound-links.js';
+  function initAnalytics() {
+    if (!ANALYTICS_DOMAIN) return;
+    // Cola estándar: los eventos previos a la carga del script no se pierden
+    window.plausible = window.plausible || function () { (window.plausible.q = window.plausible.q || []).push(arguments); };
+    const sc = document.createElement('script');
+    sc.defer = true;
+    sc.dataset.domain = ANALYTICS_DOMAIN;
+    sc.src = ANALYTICS_SRC;
+    document.head.appendChild(sc);
+  }
+  function trackEvent(name, props) {
+    if (!ANALYTICS_DOMAIN || typeof window.plausible !== 'function') return;
+    try { window.plausible(name, props ? { props } : undefined); } catch { /* la analítica nunca rompe la página */ }
+  }
+  /* Clics de conversión por delegación: WhatsApp, teléfono, correo y los
+     enlaces marcados con data-track="Nombre del evento". */
+  function initTrackedClicks() {
+    document.addEventListener('click', (e) => {
+      const a = e.target.closest('a, button');
+      if (!a) return;
+      const href = a.getAttribute('href') || '';
+      if (a.dataset.track) trackEvent(a.dataset.track);
+      else if (href.includes('wa.me/')) trackEvent('WhatsApp', { lugar: a.classList.contains('whatsapp') ? 'botón flotante' : 'enlace' });
+      else if (href.startsWith('tel:')) trackEvent('Llamada', { numero: href.slice(4) });
+      else if (href.startsWith('mailto:')) trackEvent('Correo');
+    }, { capture: true, passive: true });
+    // Preguntas frecuentes: qué dudas se abren más
+    $$('.faq__item').forEach((d) => d.addEventListener('toggle', () => {
+      if (d.open) trackEvent('Pregunta frecuente', { pregunta: $('.faq__q span', d).textContent });
+    }));
+  }
+
   /* Focus trap mínimo para diálogos */
   function trapFocus(container, e) {
     if (e.key !== 'Tab') return;
@@ -617,6 +657,9 @@
   const waBtn = $('.whatsapp');
   let tlOvershoot = 0;
 
+  /* Tema: theme.js lo cambia; aquí solo se recalcula el theme-color del móvil */
+  window.addEventListener('sipah:theme', () => { themeIsLight = null; onScroll(); });
+
   function onScroll() {
     if (ticking) return;
     ticking = true;
@@ -724,6 +767,7 @@
 
     toggle.addEventListener('click', () => {
       userPaused = !video.paused;
+      trackEvent(userPaused ? 'Video pausado' : 'Video reanudado');
       if (userPaused) video.pause(); else { inView = true; tryPlay(); }
     });
 
@@ -738,6 +782,35 @@
 
     if (saveData || reduced) setStatic(true);
     else load();
+  }
+
+  /* 05c. MAPA EN DOS TIEMPOS -------------------------------------------------
+     El iframe de Google Maps pesa ~1 MB de scripts de terceros. Se muestra un
+     dibujo ligero y el mapa real se inserta solo al pulsar; el foco pasa al
+     iframe para que el teclado siga donde estaba. */
+  function initMap() {
+    const map = $('[data-map]');
+    if (!map) return;
+    const btn = $('[data-map-load]', map);
+    btn.addEventListener('click', () => {
+      map.classList.add('is-loading');
+      const f = document.createElement('iframe');
+      f.title = 'Mapa: sede de SIPAH en El Rosario, Itagüí';
+      f.src = map.dataset.mapSrc;
+      f.width = '600';
+      f.height = '360';
+      f.referrerPolicy = 'no-referrer-when-downgrade';
+      f.allowFullscreen = true;
+      f.style.opacity = '0';
+      f.addEventListener('load', () => {
+        map.classList.remove('is-loading');
+        f.animate([{ opacity: 0 }, { opacity: 1 }], { duration: reduced ? 0 : 300, easing: 'ease', fill: 'forwards' })
+          .finished.then(() => { f.style.opacity = ''; btn.hidden = true; });
+      }, { once: true });
+      map.appendChild(f);
+      f.focus({ preventScroll: true });
+      trackEvent('Mapa interactivo');
+    }, { once: true });
   }
 
   /* 06. NAVBAR (aria-current según la sección visible) -------------------- */
@@ -1026,6 +1099,7 @@
       const data = PROJECTS[id];
       if (!data || isOpen) return;
       isOpen = true;
+      trackEvent('Ficha de hallazgo', { hallazgo: id, origen: btn.closest('.project') ? 'tarjeta' : 'mapa' });
       opener = btn;
       // Origen de la ficha: la tarjeta, o el propio pin / fila del mapa de hallazgos
       card = btn.closest('.project') || btn;
@@ -1283,6 +1357,7 @@
       if (done) return;
       done = true;
       wrap.classList.add('is-done');
+      trackEvent('Petroglifo descubierto');
       if (navigator.vibrate) navigator.vibrate(12); // cierre del gesto: un toque, mismo frame que el fundido
       setTimeout(() => { allBtn.hidden = true; }, 300);
     }
@@ -1396,6 +1471,7 @@
         const v = verdict(answers);
         $('[data-quiz-verdict]', quiz).textContent = v.title;
         $('[data-quiz-detail]', quiz).textContent = v.detail;
+        trackEvent('Asistente completado', { resultado: v.title, obra: answers.obra || '' });
         result.focus({ preventScroll: true });
       } else if (quiz.contains(document.activeElement) && document.activeElement.type === 'radio') {
         ($('input:checked', to) || $('input', to)).focus({ preventScroll: true });
@@ -1723,6 +1799,7 @@
           if (!res.ok) throw new Error(String(res.status));
           form.reset();
           fields.forEach((f) => { delete f.dataset.touched; f.removeAttribute('aria-invalid'); });
+          trackEvent('Cotización enviada', { tipo: data.tipo, via: 'formulario' });
           toast({ title: 'Solicitud enviada', description: `Gracias, ${data.nombre.split(' ')[0]}. Te responderemos en un máximo de 2 días hábiles.` });
         } else {
           const body = [
@@ -1735,6 +1812,7 @@
             data.mensaje,
           ].join('\n');
           const href = `mailto:sipahitagui@gmail.com?subject=${encodeURIComponent('Solicitud de cotización · ' + data.tipo)}&body=${encodeURIComponent(body)}`;
+          trackEvent('Cotización enviada', { tipo: data.tipo, via: 'correo' });
           toast({ title: 'Solicitud lista', description: 'Abrimos tu aplicación de correo con los datos para que la envíes.' });
           window.location.href = href;
         }
@@ -1753,7 +1831,10 @@
     renderGallery();
     initFilters();
     initLightbox();
+    initAnalytics();
+    initTrackedClicks();
     initHeroVideo();
+    initMap();
     initActiveNav();
     initReveals();
     initProcess();

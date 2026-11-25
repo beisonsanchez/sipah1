@@ -41,8 +41,9 @@
   --soil-4: #C9AE84;
   --soil-5: #DDD3BD;
 
-  --line: rgb(23 21 15 / 0.1);
-  --line-strong: rgb(23 21 15 / 0.18);
+  /* Bordes del modo claro: suaves, para que separen sin dibujar cajas */
+  --line: rgb(23 21 15 / 0.07);
+  --line-strong: rgb(23 21 15 / 0.12);
   --line-light: rgb(255 255 255 / 0.16);
 
   /* Tipografía: Newsreader (serif editorial con tamaño óptico) + IBM Plex Sans,
@@ -2472,48 +2473,201 @@ button, .btn, [role="button"], .filter, .nav__links a, .drawer__links a, .whatsa
 @media (max-width: 767px) { .hero__proof { align-items: center; } }
 
 /* 27d. MODO OSCURO --------------------------------------------------------
-   Solo cambian los roles claros (arena, papel, superficie, tinta). Las
-   secciones que ya son oscuras usan --deep / --on-dark y no se invierten. */
-@media (prefers-color-scheme: dark) {
-  :root {
-    color-scheme: dark;
-    --sand: #191911;
-    --sand-2: #24231A;
-    --paper: #1E1D15;
-    --surface: #23221A;
-    --ink: #EEE8DA;
-    --ink-2: #D8D0BE;
-    --stone: #A9A294;
-    --accent-ink: #D9A441;      /* texto dorado: el claro, AA sobre fondo oscuro */
-    --deep: #0F0F0A;
-    --line: rgb(255 255 255 / 0.09);
-    --line-strong: rgb(255 255 255 / 0.16);
-    --shadow-md: 0 1px 2px rgb(0 0 0 / 0.4);
-    --shadow-lg: 0 2px 4px rgb(0 0 0 / 0.2), 0 12px 24px rgb(0 0 0 / 0.3), 0 32px 64px rgb(0 0 0 / 0.45);
-  }
-  /* Botón por defecto: tinta clara con texto oscuro (se invierte con el tema) */
-  .btn { --btn-fg: var(--deep); }
-  .btn--primary, .btn--glass { --btn-fg: var(--white); }
-  @media (hover: hover) and (pointer: fine) {
-    .btn--primary:hover { --btn-bg: #6E4700; }
-  }
-
-  /* Vidrio del nav, drawer y barras flotantes: material oscuro */
-  .nav::before { background: rgb(25 25 17 / 0.55); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06); }
-  .nav__glass { background: rgb(25 25 17 / 0.72); }
-  .nav::after { background: linear-gradient(rgb(0 0 0 / 0.3), rgb(0 0 0 / 0)); }
-  .nav.is-compact .nav__brand img { filter: brightness(0) invert(0.92); }
-  .drawer { background: rgb(30 29 21 / 0.9); }
-  .chapters-wrap { background: rgb(25 25 17 / 0.78); }
-  .dig__all { background: rgb(30 29 21 / 0.85); }
-  .chapters a.is-active { background: var(--accent-solid); }
-
-  /* Logos en escala de grises: multiply desaparece sobre oscuro → invertir + screen */
-  .allies__grid img, .marquee__group img, .museum__logo { filter: grayscale(1) invert(1); mix-blend-mode: screen; }
-
-  /* La galería oscura se separa del fondo con un tono más profundo */
-  .section--dark { background: #0B0B07; }
+   Lo activa data-theme="dark" en <html>: un script en el <head> lo fija antes
+   de pintar (elección guardada o, si no hay, la del sistema) y el botón del
+   nav lo alterna. Solo cambian los roles claros (arena, papel, superficie,
+   tinta); las secciones que ya son oscuras usan --deep / --on-dark. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --sand: #191911;
+  --sand-2: #24231A;
+  --paper: #1E1D15;
+  --surface: #23221A;
+  --ink: #EEE8DA;
+  --ink-2: #D8D0BE;
+  --stone: #A9A294;
+  --accent-ink: #D9A441;      /* texto dorado: el claro, AA sobre fondo oscuro */
+  --deep: #0F0F0A;
+  --line: rgb(255 255 255 / 0.09);
+  --line-strong: rgb(255 255 255 / 0.16);
+  --shadow-md: 0 1px 2px rgb(0 0 0 / 0.4);
+  --shadow-lg: 0 2px 4px rgb(0 0 0 / 0.2), 0 12px 24px rgb(0 0 0 / 0.3), 0 32px 64px rgb(0 0 0 / 0.45);
 }
-@media (prefers-color-scheme: dark) and (prefers-reduced-transparency: reduce) {
-  .nav::before, .nav__glass { background: var(--sand); }
+/* Botón por defecto: tinta clara con texto oscuro (se invierte con el tema) */
+[data-theme="dark"] .btn { --btn-fg: var(--deep); }
+/* Los botones con color propio lo conservan (si no, "Agenda una visita" quedaba en negro sobre el video) */
+[data-theme="dark"] :is(.btn--primary, .btn--glass, .btn--outline-light) { --btn-fg: var(--white); }
+[data-theme="dark"] .btn--light { --btn-fg: var(--ink); }
+@media (hover: hover) and (pointer: fine) {
+  [data-theme="dark"] .btn--primary:hover { --btn-bg: #6E4700; }
+}
+
+/* Vidrio del nav, drawer y barras flotantes: material oscuro */
+[data-theme="dark"] .nav::before { background: rgb(25 25 17 / 0.55); box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.06); }
+[data-theme="dark"] .nav__glass { background: rgb(25 25 17 / 0.72); }
+[data-theme="dark"] .nav::after { background: linear-gradient(rgb(0 0 0 / 0.3), rgb(0 0 0 / 0)); }
+[data-theme="dark"] .nav.is-compact .nav__brand img { filter: brightness(0) invert(0.92); }
+[data-theme="dark"] .drawer { background: rgb(30 29 21 / 0.9); }
+[data-theme="dark"] .chapters-wrap { background: rgb(25 25 17 / 0.78); }
+[data-theme="dark"] .dig__all { background: rgb(30 29 21 / 0.85); }
+[data-theme="dark"] .chapters a.is-active { background: var(--accent-solid); }
+
+/* Logos en escala de grises: multiply desaparece sobre oscuro → invertir + screen */
+[data-theme="dark"] :is(.allies__grid img, .marquee__group img, .museum__logo) { filter: grayscale(1) invert(1); mix-blend-mode: screen; }
+
+/* La galería oscura se separa del fondo con un tono más profundo */
+[data-theme="dark"] .section--dark { background: #0B0B07; }
+@media (prefers-reduced-transparency: reduce) {
+  [data-theme="dark"] .nav::before, [data-theme="dark"] .nav__glass { background: var(--sand); }
+}
+
+/* Botón de tema (nav): 44px de zona táctil; muestra el destino, no el estado:
+   luna en modo claro ("pasar a oscuro"), sol en modo oscuro. */
+.nav__theme {
+  display: grid;
+  place-items: center;
+  width: 44px; height: 44px;
+  margin-right: -6px;
+  border-radius: var(--radius-pill);
+  opacity: 0.86;
+  transition: transform var(--dur-press) var(--ease-out), opacity var(--dur-micro) ease, background-color var(--dur-micro) ease;
+}
+.nav__theme:active { transform: scale(0.94); }
+.nav__theme .icon { width: 20px; height: 20px; grid-area: 1 / 1; transition: opacity var(--dur-ui) ease, transform var(--dur-ui) var(--ease-out); }
+.nav__theme .i-sun { opacity: 0; transform: rotate(-45deg) scale(0.6); }
+[data-theme="dark"] .nav__theme .i-sun { opacity: 1; transform: none; }
+[data-theme="dark"] .nav__theme .i-moon { opacity: 0; transform: rotate(45deg) scale(0.6); }
+@media (hover: hover) and (pointer: fine) {
+  .nav__theme:hover { opacity: 1; background: rgb(127 127 127 / 0.12); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nav__theme .icon { transition: opacity 150ms ease; transform: none !important; }
+}
+/* El cambio de tema se funde (View Transitions) en vez de saltar de golpe */
+::view-transition-old(root), ::view-transition-new(root) { animation-duration: 280ms; animation-timing-function: ease; }
+
+/* ==========================================================================
+   28. RENDIMIENTO Y CONFIANZA · mapa en dos tiempos y preguntas frecuentes
+   ========================================================================== */
+
+/* 28a. Mapa ligero: dibujo de calles con pin; el iframe real llega al pedirlo */
+.map { position: relative; }
+.map__facade {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  text-align: left;
+  color: var(--ink);
+  background: var(--sand-2);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.map__art { position: absolute; inset: 0; width: 100%; height: 100%; }
+.map__streets path { fill: none; stroke: var(--paper); stroke-width: 14; stroke-linecap: round; }
+.map__streets .map__street--minor { stroke-width: 6; opacity: 0.85; }
+.map__river { fill: none; stroke: #9FB6C2; stroke-width: 10; stroke-linecap: round; opacity: 0.55; }
+.map__pin path { fill: var(--accent-ink); }
+.map__dot { fill: var(--white); }
+.map__halo { fill: rgb(165 108 0 / 0.16); transform-origin: 0 0; transition: transform 400ms var(--ease-out); }
+.map__card {
+  position: absolute;
+  left: var(--space-4);
+  top: var(--space-4);
+  display: grid;
+  gap: 2px;
+  max-width: calc(100% - 2 * var(--space-4));
+  padding: 10px 14px;
+  border-radius: var(--radius);
+  background: rgb(250 247 240 / 0.88);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: var(--shadow-md);
+  font-size: var(--fs-sm);
+}
+.map__card span { color: var(--stone); font-size: var(--fs-xs); }
+.map__cta {
+  position: absolute;
+  right: var(--space-4);
+  bottom: var(--space-4);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: var(--radius-pill);
+  background: var(--ink);
+  color: var(--sand);
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  transition: transform var(--dur-press) var(--ease-out);
+}
+.map__cta .icon { width: 18px; height: 18px; }
+.map__facade:active .map__cta { transform: scale(0.96); }
+.map__facade:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 3px; }
+.map.is-loading .map__cta { opacity: 0.7; }
+.map iframe { position: absolute; inset: 0; }
+@media (hover: hover) and (pointer: fine) {
+  .map__facade:hover .map__halo { transform: scale(1.35); }
+}
+@media (prefers-reduced-transparency: reduce) { .map__card { background: var(--paper); backdrop-filter: none; } }
+@media (prefers-color-scheme: dark) {
+  .map__card { background: rgb(35 34 26 / 0.9); color: var(--ink); }
+  .map__cta { background: var(--ink); color: var(--deep); }
+}
+
+/* 28b. Preguntas frecuentes ---------------------------------------------- */
+.faq { display: grid; gap: var(--space-6); }
+.faq__list { border-top: 1px solid var(--line); }
+.faq__item { border-bottom: 1px solid var(--line); }
+.faq__q {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  min-height: 64px;
+  padding-block: var(--space-4);
+  cursor: pointer;
+  list-style: none;
+  font-family: var(--font-serif);
+  font-size: var(--fs-lg);
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  -webkit-tap-highlight-color: transparent;
+}
+.faq__q::-webkit-details-marker { display: none; }
+.faq__q .icon {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  color: var(--accent-ink);
+  transform: rotate(90deg);
+  transition: transform var(--dur-ui) var(--ease-out);
+}
+.faq__item[open] .faq__q .icon { transform: rotate(-90deg); }
+.faq__q:active span { opacity: 0.7; }
+.faq__q:focus-visible { outline: 2px solid var(--accent-ink); outline-offset: 4px; border-radius: 4px; }
+.faq__a { padding-bottom: var(--space-5); max-width: 44rem; color: var(--stone); }
+/* Apertura con altura animada donde el navegador lo soporta (interpolate-size);
+   en el resto abre al instante, que también es correcto. */
+@supports (interpolate-size: allow-keywords) {
+  .faq { interpolate-size: allow-keywords; }
+  .faq__item::details-content {
+    block-size: 0;
+    overflow: clip;
+    opacity: 0;
+    transition: block-size 320ms var(--ease-out), opacity 240ms ease, content-visibility 320ms allow-discrete;
+  }
+  .faq__item[open]::details-content { block-size: auto; opacity: 1; }
+}
+@media (hover: hover) and (pointer: fine) {
+  .faq__q:hover span { color: var(--accent-ink); }
+}
+@media (min-width: 1024px) {
+  .faq { grid-template-columns: 1fr 1.6fr; gap: var(--space-8); align-items: start; }
+  .faq__head { position: sticky; top: calc(var(--nav-h) + var(--space-5)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .faq__item::details-content { transition: none; }
+  .faq__q .icon, .map__halo { transition: none; }
 }

@@ -287,6 +287,18 @@
     root.innerHTML = html;
   }
 
+  /* Variantes WebP de /img-opt (las genera el script de optimización con la
+     misma regla: 480/800/1200/1600 px sin superar el ancho original). Los PNG
+     no tienen variantes y se sirven tal cual. */
+  const OPT_STEPS = [480, 800, 1200, 1600];
+  function responsive(s) {
+    if (!/\.jpe?g$/i.test(s.src)) return `src="${IMG + s.src}"`;
+    const base = 'img-opt/' + s.src.replace(/\.[^.]+$/, '');
+    const ws = [...new Set([...OPT_STEPS.filter((x) => x < s.w), Math.min(s.w, 1600)])].sort((a, b) => a - b);
+    const mid = ws.reduce((a, b) => (Math.abs(b - 800) < Math.abs(a - 800) ? b : a));
+    return `src="${base}-${mid}.webp" srcset="${ws.map((w) => `${base}-${w}.webp ${w}w`).join(', ')}" sizes="(min-width: 1024px) 55vw, 100vw"`;
+  }
+
   function storyHTML(s) {
     const shape = s.w / s.h > 1.6 ? 'wide' : s.h > s.w * 1.15 ? 'tall' : 'std';
     const meta = [s.place, s.date].filter(Boolean).map(esc).join(' · ');
@@ -294,7 +306,7 @@
     <article class="story story--${shape}" id="${s.id}" data-reveal>
       <figure class="story__media">
         <button class="story__zoom" type="button" data-zoom="${s.id}" aria-label="Ampliar imagen: ${esc(s.alt)}">
-          <img src="${IMG + s.src}" alt="${esc(s.alt)}" width="${s.w}" height="${s.h}" loading="lazy" decoding="async">
+          <img ${responsive(s)} alt="${esc(s.alt)}" width="${s.w}" height="${s.h}" loading="lazy" decoding="async">
         </button>
       </figure>
       <div class="story__body">

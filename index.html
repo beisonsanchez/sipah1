@@ -7,6 +7,8 @@
   <meta name="description" content="SIPAH Corporation: investigación arqueológica, arqueología preventiva, planes de manejo y gestión patrimonial para obras públicas y privadas en Colombia. Sede en Itagüí, Antioquia.">
   <meta name="theme-color" content="#17150F">
   <meta name="color-scheme" content="light dark">
+  <!-- Tema antes del primer pintado (sin destello): elección guardada o la del sistema -->
+  <script src="theme.js"></script>
   <!-- TODO: reemplazar https://www.sipah.org por el dominio definitivo -->
   <link rel="canonical" href="https://www.sipah.org/">
 
@@ -88,6 +90,60 @@
           "closes": "16:30"
         }],
         "sameAs": ["https://www.instagram.com/museocomunitariogav", "https://www.facebook.com/gracilianoarcilavelez.museocomunitario.3", "https://x.com/gav_museo"]
+      },
+      {
+        "@type": "FAQPage",
+        "@id": "https://www.sipah.org/#faq",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "¿Qué obras necesitan un Programa de Arqueología Preventiva?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Por ley, los proyectos que requieren licencia ambiental deben contar con un Programa de Arqueología Preventiva aprobado por el ICANH antes de intervenir el suelo (Ley 1185 de 2008 y Decreto 138 de 2019). En otros casos puede exigirlo el plan de ordenamiento territorial o el plan de manejo de una zona de interés arqueológico. Si no tienes claro tu caso, lo revisamos contigo."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "¿Qué pasa si aparece un hallazgo arqueológico durante la obra?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Hay que detener la intervención en ese punto y dar aviso al ICANH, que define cómo continuar. Con un programa de arqueología preventiva en marcha, el equipo arqueológico ya está en la obra para registrar y rescatar el hallazgo con control estratigráfico, y la afectación al cronograma es menor."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "¿Cuánto tarda un estudio arqueológico?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Depende del área, del potencial arqueológico del terreno y de la fase del proyecto: no es lo mismo un diagnóstico que un rescate. En la cotización te entregamos un cronograma por fases ajustado a tu obra."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "¿Qué entregan al terminar?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "El informe técnico para radicar ante el ICANH, con el registro de campo, la cartografía, los análisis de laboratorio de los materiales y las medidas de manejo. También acompañamos la divulgación del conocimiento con la comunidad cuando el proyecto lo requiere."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "¿Tienen laboratorio propio?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Sí. En nuestra sede de Itagüí analizamos material lítico, cerámico, óseo, de suelos, metales y fauna, y hacemos registro, inventario, conservación y escaneo 3D de piezas."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "¿Cómo empiezo?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Responde las tres preguntas del asistente de esta página o escríbenos con la ubicación y el alcance de tu proyecto. Respondemos en un plazo de 2 días hábiles."
+            }
+          }
+        ]
       }
     ]
   }
@@ -110,6 +166,8 @@
       <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
       <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
       <symbol id="i-external" viewBox="0 0 24 24"><path d="M14 5h5v5M19 5l-8 8M17 14v4a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1h4"/></symbol>
+      <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M4.6 4.6l1.4 1.4M18 18l1.4 1.4M2.5 12h2M19.5 12h2M4.6 19.4L6 18M18 6l1.4-1.4"/></symbol>
+      <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></symbol>
       <symbol id="i-pause" viewBox="0 0 24 24"><path fill="currentColor" stroke="none" d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z"/></symbol>
       <symbol id="i-play" viewBox="0 0 24 24"><path fill="currentColor" stroke="none" d="M8 5.5v13a.8.8 0 0 0 1.2.7l10.4-6.5a.8.8 0 0 0 0-1.4L9.2 4.8A.8.8 0 0 0 8 5.5z"/></symbol>
       <symbol id="i-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.5v.01"/></symbol>
@@ -158,7 +216,11 @@
         <a href="galeria.html">Galería</a>
         <a href="#contacto">Contacto</a>
       </nav>
-      <a class="btn btn--primary btn--sm nav__cta" href="#contacto">Solicitar cotización</a>
+      <a class="btn btn--primary btn--sm nav__cta" href="#contacto" data-track="Menú: cotización">Solicitar cotización</a>
+      <button class="nav__theme" type="button" aria-label="Cambiar a modo oscuro" data-theme-toggle>
+        <svg class="icon i-moon" aria-hidden="true"><use href="#i-moon"/></svg>
+        <svg class="icon i-sun" aria-hidden="true"><use href="#i-sun"/></svg>
+      </button>
       <button class="nav__menu" type="button" aria-label="Abrir menú" aria-controls="drawer" aria-expanded="false" data-drawer-open>
         <svg class="icon" aria-hidden="true"><use href="#i-menu"/></svg>
       </button>
@@ -194,8 +256,8 @@
           <li><strong>ICANH</strong> supervisión en cada programa</li>
         </ul>
         <div class="hero__ctas hero-in" style="--i:4">
-          <a class="btn btn--primary" href="#servicios">Conoce nuestros servicios <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></a>
-          <a class="btn btn--outline-light" href="#contacto">Agenda una visita</a>
+          <a class="btn btn--primary" href="#servicios" data-track="Hero: servicios">Conoce nuestros servicios <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+          <a class="btn btn--outline-light" href="#contacto" data-track="Hero: agendar visita">Agenda una visita</a>
         </div>
       </div>
       <!-- Indicador de scroll: un punto baja dentro de una cápsula -->
@@ -233,7 +295,7 @@
           </ul>
         </div>
         <figure class="about__media" data-reveal>
-          <img src="img-original/grupo-sipah-2018-ok-1024x683.jpg" alt="Equipo de SIPAH y Vigías del Patrimonio reunidos en 2018" width="1024" height="683" loading="lazy" decoding="async">
+          <img src="img-opt/grupo-sipah-2018-ok-1024x683-800.webp" srcset="img-opt/grupo-sipah-2018-ok-1024x683-480.webp 480w, img-opt/grupo-sipah-2018-ok-1024x683-800.webp 800w, img-opt/grupo-sipah-2018-ok-1024x683-1024.webp 1024w" sizes="(min-width: 1024px) 50vw, 100vw" alt="Equipo de SIPAH y Vigías del Patrimonio reunidos en 2018" width="1024" height="683" loading="lazy" decoding="async">
           <figcaption class="fig"><span class="fig__n">Fig. 1</span> Equipo de SIPAH y Vigías del Patrimonio de Itagüí · 2018 · Archivo SIPAH</figcaption>
         </figure>
       </div>
@@ -296,11 +358,11 @@
 
         <div class="svc__photos" data-reveal-group>
           <figure>
-            <img src="img-original/investigador-768x1024.jpg" alt="Investigador analizando muestras al microscopio en el laboratorio de SIPAH" width="768" height="1024" loading="lazy" decoding="async">
+            <img src="img-opt/investigador-768x1024-768.webp" srcset="img-opt/investigador-768x1024-480.webp 480w, img-opt/investigador-768x1024-768.webp 768w" sizes="(min-width: 1024px) 50vw, 100vw" alt="Investigador analizando muestras al microscopio en el laboratorio de SIPAH" width="768" height="1024" loading="lazy" decoding="async">
             <figcaption class="fig"><span class="fig__n">Fig. 3</span> Análisis de muestras · Laboratorio de SIPAH, Itagüí · Archivo SIPAH</figcaption>
           </figure>
           <figure>
-            <img src="img-original/registro-inventario.jpg" alt="Profesionales registrando e inventariando piezas patrimoniales" width="1272" height="508" loading="lazy" decoding="async">
+            <img src="img-opt/registro-inventario-800.webp" srcset="img-opt/registro-inventario-480.webp 480w, img-opt/registro-inventario-800.webp 800w, img-opt/registro-inventario-1200.webp 1200w, img-opt/registro-inventario-1272.webp 1272w" sizes="(min-width: 1024px) 50vw, 100vw" alt="Profesionales registrando e inventariando piezas patrimoniales" width="1272" height="508" loading="lazy" decoding="async">
             <figcaption class="fig"><span class="fig__n">Fig. 4</span> Registro e inventario de colecciones · Archivo SIPAH</figcaption>
           </figure>
         </div>
@@ -341,7 +403,7 @@
         <div class="projects" data-reveal-group>
           <article class="project project--lg">
             <!-- Datos reales: corporacionsipah.org (noticia del 27/09/2019) -->
-            <div class="project__media"><img src="img-original/colombia4_0d9ebaf0.jpg" alt="Excavación de las tumbas prehispánicas halladas al sur de Medellín" width="1280" height="960" loading="lazy" decoding="async"><span class="project__cap">Parque de las Luces, Itagüí · 2016</span></div>
+            <div class="project__media"><img src="img-opt/colombia4_0d9ebaf0-800.webp" srcset="img-opt/colombia4_0d9ebaf0-480.webp 480w, img-opt/colombia4_0d9ebaf0-800.webp 800w, img-opt/colombia4_0d9ebaf0-1200.webp 1200w, img-opt/colombia4_0d9ebaf0-1280.webp 1280w" sizes="(min-width: 1024px) 50vw, 100vw" alt="Excavación de las tumbas prehispánicas halladas al sur de Medellín" width="1280" height="960" loading="lazy" decoding="async"><span class="project__cap">Parque de las Luces, Itagüí · 2016</span></div>
             <div class="project__body">
               <p class="project__meta">Sur de Medellín · 2.000 años</p>
               <h3>Tres tumbas de 2.000 años al sur de Medellín</h3>
@@ -350,7 +412,7 @@
             </div>
           </article>
           <article class="project">
-            <div class="project__media"><img src="img-original/hallazgo-vasijas-telemedellin.jpg" alt="Vasijas cerámicas precolombinas halladas en la sede de Telemedellín" width="580" height="365" loading="lazy" decoding="async"><span class="project__cap">Sede de Telemedellín, El Poblado · 2015</span></div>
+            <div class="project__media"><img src="img-opt/hallazgo-vasijas-telemedellin-580.webp" srcset="img-opt/hallazgo-vasijas-telemedellin-480.webp 480w, img-opt/hallazgo-vasijas-telemedellin-580.webp 580w" sizes="(min-width: 1024px) 50vw, 100vw" alt="Vasijas cerámicas precolombinas halladas en la sede de Telemedellín" width="580" height="365" loading="lazy" decoding="async"><span class="project__cap">Sede de Telemedellín, El Poblado · 2015</span></div>
             <div class="project__body">
               <p class="project__meta">Medellín · 2.500 años</p>
               <h3>Hallazgo de 2.500 años en la sede de Telemedellín</h3>
@@ -359,7 +421,7 @@
             </div>
           </article>
           <article class="project">
-            <div class="project__media"><img src="img-original/noticia-caracol.jpg" alt="Reportaje de Noticias Caracol sobre el hallazgo arqueológico de hace dos mil años en Itagüí" width="1000" height="562" loading="lazy" decoding="async"><span class="project__cap">Cubrimiento de Noticias Caracol</span></div>
+            <div class="project__media"><img src="img-opt/noticia-caracol-800.webp" srcset="img-opt/noticia-caracol-480.webp 480w, img-opt/noticia-caracol-800.webp 800w, img-opt/noticia-caracol-1000.webp 1000w" sizes="(min-width: 1024px) 50vw, 100vw" alt="Reportaje de Noticias Caracol sobre el hallazgo arqueológico de hace dos mil años en Itagüí" width="1000" height="562" loading="lazy" decoding="async"><span class="project__cap">Cubrimiento de Noticias Caracol</span></div>
             <div class="project__body">
               <p class="project__meta">Itagüí · 2.000 años</p>
               <h3>Hallazgo de hace dos mil años en Itagüí</h3>
@@ -437,7 +499,7 @@
           <p>«Un hallazgo tan complejo como este, nos permite interpretar que en este sitio habitó un grupo humano de nativos, quizás numeroso y con prácticas agroalfareras que son indicativas de sedentarismo, y esta zona donde hoy funciona Telemedellín fue el asentamiento para algunos de ellos […]»</p>
         </blockquote>
         <div class="voice__by">
-          <img src="img-original/3-1-1024x1024.jpeg" alt="" width="1024" height="1024" loading="lazy" decoding="async">
+          <img src="img-opt/3-1-1024x1024-800.webp" srcset="img-opt/3-1-1024x1024-480.webp 480w, img-opt/3-1-1024x1024-800.webp 800w, img-opt/3-1-1024x1024-1024.webp 1024w" sizes="52px" alt="" width="1024" height="1024" loading="lazy" decoding="async">
           <p><strong>Juan Pablo Díez Ramírez</strong><span>Arqueólogo · director de la Corporación SIPAH</span></p>
           <a class="voice__src" href="https://www.medellin.gov.co/es/sala-de-prensa/noticias/hallados-yacimientos-arqueologicos-en-zona-del-canal-telemedellin/" target="_blank" rel="noopener">Fuente: Alcaldía de Medellín, 2024 <svg class="icon" aria-hidden="true"><use href="#i-external"/></svg></a>
         </div>
@@ -456,14 +518,14 @@
         </header>
         <ol class="timeline__track" data-timeline-track>
           <li class="era">
-            <div class="era__media"><img src="img-original/hallazgo-vasijas-telemedellin.jpg" alt="" width="580" height="365" loading="lazy" decoding="async"></div>
+            <div class="era__media"><img src="img-opt/hallazgo-vasijas-telemedellin-580.webp" srcset="img-opt/hallazgo-vasijas-telemedellin-480.webp 480w, img-opt/hallazgo-vasijas-telemedellin-580.webp 580w" sizes="(min-width: 768px) 340px, 80vw" alt="" width="580" height="365" loading="lazy" decoding="async"></div>
             <p class="era__date">2015</p>
             <h3>Telemedellín, El Poblado</h3>
             <p>Las obras del canal del parque Gabriel García Márquez revelan un asentamiento de más de 2.500 años. SIPAH excava y conserva 24 vasijas y más de 10.000 fragmentos, con supervisión del ICANH.</p>
             <p class="era__src">Fuente: Alcaldía de Medellín</p>
           </li>
           <li class="era">
-            <div class="era__media"><img src="img-original/colombia4_0d9ebaf0.jpg" alt="" width="1280" height="960" loading="lazy" decoding="async"></div>
+            <div class="era__media"><img src="img-opt/colombia4_0d9ebaf0-800.webp" srcset="img-opt/colombia4_0d9ebaf0-480.webp 480w, img-opt/colombia4_0d9ebaf0-800.webp 800w, img-opt/colombia4_0d9ebaf0-1200.webp 1200w, img-opt/colombia4_0d9ebaf0-1280.webp 1280w" sizes="(min-width: 768px) 340px, 80vw" alt="" width="1280" height="960" loading="lazy" decoding="async"></div>
             <p class="era__date">2016</p>
             <h3>Parque de las Luces, Itagüí</h3>
             <p>El 16 de mayo aparece una tumba con dos vasijas del estilo Marrón Inciso. En las semanas siguientes se identifican tres tumbas de más de 2.000 años.</p>
@@ -479,35 +541,35 @@
             <p class="era__src">Fuente: El Colombiano</p>
           </li>
           <li class="era">
-            <div class="era__media"><img src="img-original/grupo-sipah-2018-ok-1024x683.jpg" alt="" width="1024" height="683" loading="lazy" decoding="async"></div>
+            <div class="era__media"><img src="img-opt/grupo-sipah-2018-ok-1024x683-800.webp" srcset="img-opt/grupo-sipah-2018-ok-1024x683-480.webp 480w, img-opt/grupo-sipah-2018-ok-1024x683-800.webp 800w, img-opt/grupo-sipah-2018-ok-1024x683-1024.webp 1024w" sizes="(min-width: 768px) 340px, 80vw" alt="" width="1024" height="683" loading="lazy" decoding="async"></div>
             <p class="era__date">2018</p>
             <h3>Equipo y Vigías</h3>
             <p>El equipo de SIPAH y los Vigías del Patrimonio de Itagüí trabajan juntos en investigación y divulgación.</p>
             <p class="era__src">Fuente: Archivo SIPAH</p>
           </li>
           <li class="era">
-            <div class="era__media"><img src="img-original/familias-verdes.jpg" alt="" width="1600" height="1067" loading="lazy" decoding="async"></div>
+            <div class="era__media"><img src="img-opt/familias-verdes-800.webp" srcset="img-opt/familias-verdes-480.webp 480w, img-opt/familias-verdes-800.webp 800w, img-opt/familias-verdes-1200.webp 1200w, img-opt/familias-verdes-1600.webp 1600w" sizes="(min-width: 768px) 340px, 80vw" alt="" width="1600" height="1067" loading="lazy" decoding="async"></div>
             <p class="era__date">2019</p>
             <h3>Familias Verdes</h3>
             <p>Siembra con la comunidad del barrio El Rosario en el parque de los Petroglifos, el 24 de octubre.</p>
             <p class="era__src">Fuente: corporacionsipah.org</p>
           </li>
           <li class="era">
-            <div class="era__media"><img src="img-original/19_05_21_conversa_internacional.jpeg" alt="" width="861" height="843" loading="lazy" decoding="async"></div>
+            <div class="era__media"><img src="img-opt/19_05_21_conversa_internacional-800.webp" srcset="img-opt/19_05_21_conversa_internacional-480.webp 480w, img-opt/19_05_21_conversa_internacional-800.webp 800w, img-opt/19_05_21_conversa_internacional-861.webp 861w" sizes="(min-width: 768px) 340px, 80vw" alt="" width="861" height="843" loading="lazy" decoding="async"></div>
             <p class="era__date">2021</p>
             <h3>Conversatorios en línea</h3>
             <p>Ronda Latinoamericana de museos el 19 de mayo y conversatorios del Mes del Patrimonio en septiembre.</p>
             <p class="era__src">Fuente: Archivo SIPAH</p>
           </li>
           <li class="era">
-            <div class="era__media"><img src="img-original/valor-agregado.jpg" alt="" width="768" height="1086" loading="lazy" decoding="async"></div>
+            <div class="era__media"><img src="img-opt/valor-agregado-768.webp" srcset="img-opt/valor-agregado-480.webp 480w, img-opt/valor-agregado-768.webp 768w" sizes="(min-width: 768px) 340px, 80vw" alt="" width="768" height="1086" loading="lazy" decoding="async"></div>
             <p class="era__date">2022</p>
             <h3>Valor Agregado</h3>
             <p>Exposición temporal en el Museo Comunitario G.A.V., inaugurada el 26 de febrero. Ganadora de la convocatoria de estímulos del Ministerio de Cultura.</p>
             <p class="era__src">Fuente: Archivo SIPAH</p>
           </li>
           <li class="era era--now">
-            <div class="era__media"><img src="img-original/poster-icom.jpg" alt="" width="900" height="1348" loading="lazy" decoding="async"></div>
+            <div class="era__media"><img src="img-opt/poster-icom-800.webp" srcset="img-opt/poster-icom-480.webp 480w, img-opt/poster-icom-800.webp 800w, img-opt/poster-icom-900.webp 900w" sizes="(min-width: 768px) 340px, 80vw" alt="" width="900" height="1348" loading="lazy" decoding="async"></div>
             <p class="era__date">2023</p>
             <h3>Día Internacional de los Museos</h3>
             <p>El 18 de mayo abre la exposición «Historias, mitos y patrimonio arqueológico de La Loma y El Rosario».</p>
@@ -526,7 +588,7 @@
              El botón la retira de una vez (teclado y lectores de pantalla). -->
         <figure class="petro__media" data-dig>
           <div class="dig">
-            <img src="img-original/petroglifo.jpeg" alt="Roca con grabados prehispánicos en el parque de los Petroglifos de El Rosario, Itagüí" width="720" height="540" loading="lazy" decoding="async">
+            <img src="img-opt/petroglifo-720.webp" srcset="img-opt/petroglifo-480.webp 480w, img-opt/petroglifo-720.webp 720w" sizes="(min-width: 1024px) 50vw, 100vw" alt="Roca con grabados prehispánicos en el parque de los Petroglifos de El Rosario, Itagüí" width="720" height="540" loading="lazy" decoding="async">
             <canvas class="dig__soil" aria-hidden="true" data-dig-canvas></canvas>
             <p class="dig__hint" aria-hidden="true" data-dig-hint><svg class="icon"><use href="#i-trowel"/></svg>Raspa la tierra para descubrir el grabado</p>
             <button class="dig__all" type="button" data-dig-all>Descubrir todo</button>
@@ -559,7 +621,7 @@
       <div class="container">
         <div class="museum">
           <figure class="museum__media" data-reveal>
-            <img src="img-original/Foto-Museo-1024x768.jpeg" alt="Fachada del Museo Comunitario con la exposición Los Petroglifos, una historia tallada en roca" width="1024" height="768" loading="lazy" decoding="async">
+            <img src="img-opt/Foto-Museo-1024x768-800.webp" srcset="img-opt/Foto-Museo-1024x768-480.webp 480w, img-opt/Foto-Museo-1024x768-800.webp 800w, img-opt/Foto-Museo-1024x768-1024.webp 1024w" sizes="(min-width: 1024px) 50vw, 100vw" alt="Fachada del Museo Comunitario con la exposición Los Petroglifos, una historia tallada en roca" width="1024" height="768" loading="lazy" decoding="async">
             <figcaption class="fig"><span class="fig__n">Fig. 6</span> Entrada del museo con la exposición «Los Petroglifos: una historia tallada en roca» · El Rosario, Itagüí</figcaption>
           </figure>
           <div class="museum__info" data-reveal>
@@ -581,17 +643,17 @@
 
         <ul class="programs" data-reveal-group>
           <li class="program">
-            <div class="program__media"><img src="img-original/2-1-1024x1024.jpeg" alt="Afiche de la charla Museos y comunidad con estudiantes frente al museo" width="1024" height="1024" loading="lazy" decoding="async"></div>
+            <div class="program__media"><img src="img-opt/2-1-1024x1024-800.webp" srcset="img-opt/2-1-1024x1024-480.webp 480w, img-opt/2-1-1024x1024-800.webp 800w, img-opt/2-1-1024x1024-1024.webp 1024w" sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw" alt="Afiche de la charla Museos y comunidad con estudiantes frente al museo" width="1024" height="1024" loading="lazy" decoding="async"></div>
             <h3>Museo Virtual</h3>
             <p>Charlas y recorridos en línea, como «Museos y comunidad: experiencias significativas desde la Corporación SIPAH».</p>
           </li>
           <li class="program">
-            <div class="program__media"><img src="img-original/4-1-1024x1024.jpeg" alt="Motomuseo itinerante de SIPAH, un triciclo rojo adaptado como museo móvil" width="1024" height="1024" loading="lazy" decoding="async"></div>
+            <div class="program__media"><img src="img-opt/4-1-1024x1024-800.webp" srcset="img-opt/4-1-1024x1024-480.webp 480w, img-opt/4-1-1024x1024-800.webp 800w, img-opt/4-1-1024x1024-1024.webp 1024w" sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw" alt="Motomuseo itinerante de SIPAH, un triciclo rojo adaptado como museo móvil" width="1024" height="1024" loading="lazy" decoding="async"></div>
             <h3>Motomuseo itinerante</h3>
             <p>Un triciclo convertido en vitrina que lleva piezas y relatos a barrios, colegios y eventos.</p>
           </li>
           <li class="program">
-            <div class="program__media"><img src="img-original/tallerista.jpg" alt="Tallerista acompañando a niñas en una actividad de la ludoteca patrimonial" width="789" height="618" loading="lazy" decoding="async"></div>
+            <div class="program__media"><img src="img-opt/tallerista-789.webp" srcset="img-opt/tallerista-480.webp 480w, img-opt/tallerista-789.webp 789w" sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw" alt="Tallerista acompañando a niñas en una actividad de la ludoteca patrimonial" width="789" height="618" loading="lazy" decoding="async"></div>
             <h3>Ludoteca patrimonial</h3>
             <p>Talleres y juegos para que niñas y niños se acerquen a la historia de su barrio.</p>
           </li>
@@ -600,11 +662,11 @@
         <div class="exhibits" data-reveal-group>
           <h3 class="exhibits__title">Exposiciones recientes</h3>
           <figure class="exhibit">
-            <img src="img-original/poster-icom.jpg" alt="Afiche del Día Internacional de los Museos 2023: exposición Historias, mitos y patrimonio arqueológico de La Loma y El Rosario" width="900" height="1348" loading="lazy" decoding="async">
+            <img src="img-opt/poster-icom-800.webp" srcset="img-opt/poster-icom-480.webp 480w, img-opt/poster-icom-800.webp 800w, img-opt/poster-icom-900.webp 900w" sizes="(min-width: 768px) 25vw, 50vw" alt="Afiche del Día Internacional de los Museos 2023: exposición Historias, mitos y patrimonio arqueológico de La Loma y El Rosario" width="900" height="1348" loading="lazy" decoding="async">
             <figcaption class="fig"><span class="fig__n">18 may 2023</span> «Historias, mitos y patrimonio arqueológico de La Loma y El Rosario» · Día Internacional de los Museos</figcaption>
           </figure>
           <figure class="exhibit">
-            <img src="img-original/valor-agregado.jpg" alt="Afiche de la exposición temporal Valor Agregado en el Museo Comunitario Graciliano Arcila Vélez" width="768" height="1086" loading="lazy" decoding="async">
+            <img src="img-opt/valor-agregado-768.webp" srcset="img-opt/valor-agregado-480.webp 480w, img-opt/valor-agregado-768.webp 768w" sizes="(min-width: 768px) 25vw, 50vw" alt="Afiche de la exposición temporal Valor Agregado en el Museo Comunitario Graciliano Arcila Vélez" width="768" height="1086" loading="lazy" decoding="async">
             <figcaption class="fig"><span class="fig__n">26 feb 2022</span> «Valor Agregado» · Ganadora de la convocatoria de estímulos del Ministerio de Cultura</figcaption>
           </figure>
         </div>
@@ -971,7 +1033,7 @@
         <ul class="books" data-reveal-group>
           <li class="book">
             <div class="book__cover book__cover--img">
-              <img src="img-original/mar-y-selva.jpg" alt="Ilustración Naturaleza, mar y cultura: el origen de lo que somos, sobre el municipio de Arboletes" width="1600" height="568" loading="lazy" decoding="async">
+              <img src="img-opt/mar-y-selva-800.webp" srcset="img-opt/mar-y-selva-480.webp 480w, img-opt/mar-y-selva-800.webp 800w, img-opt/mar-y-selva-1200.webp 1200w, img-opt/mar-y-selva-1600.webp 1600w" sizes="(min-width: 768px) 40vw, 100vw" alt="Ilustración Naturaleza, mar y cultura: el origen de lo que somos, sobre el municipio de Arboletes" width="1600" height="568" loading="lazy" decoding="async">
               <span class="book__title">Memorias y patrimonio cultural del municipio de Arboletes</span>
             </div>
             <p class="book__meta">Arboletes, Antioquia</p>
@@ -1011,7 +1073,7 @@
         <div class="news" data-reveal-group>
           <article class="news-card news-card--feature">
             <a class="news-card__link" href="https://corporacionsipah.org/2019/10/24/familias-verdes/" target="_blank" rel="noopener">
-              <div class="news-card__media"><img src="img-original/familias-verdes.jpg" alt="Niñas y niños de El Rosario en la actividad de siembra Familias Verdes" width="1600" height="1067" loading="lazy" decoding="async"></div>
+              <div class="news-card__media"><img src="img-opt/familias-verdes-800.webp" srcset="img-opt/familias-verdes-480.webp 480w, img-opt/familias-verdes-800.webp 800w, img-opt/familias-verdes-1200.webp 1200w, img-opt/familias-verdes-1600.webp 1600w" sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw" alt="Niñas y niños de El Rosario en la actividad de siembra Familias Verdes" width="1600" height="1067" loading="lazy" decoding="async"></div>
               <div class="news-card__body">
                 <p class="news-card__meta"><span class="news-card__tag">Corporación SIPAH</span><time datetime="2019-10-24">24 de octubre de 2019</time></p>
                 <h3 class="news-card__title">Familias Verdes</h3>
@@ -1025,7 +1087,7 @@
             <li class="news-card">
               <!-- Enlace directo al artículo de prensa original (no a la página de SIPAH) -->
               <a class="news-card__link" href="https://www.elcolombiano.com/antioquia/tumba-indigena-de-mas-de-2-000-anos-fue-encontrada-en-itagui-MF4171824" target="_blank" rel="noopener">
-                <div class="news-card__media"><img src="img-original/noticia-caracol.jpg" alt="" width="1000" height="562" loading="lazy" decoding="async"></div>
+                <div class="news-card__media"><img src="img-opt/noticia-caracol-800.webp" srcset="img-opt/noticia-caracol-480.webp 480w, img-opt/noticia-caracol-800.webp 800w, img-opt/noticia-caracol-1000.webp 1000w" sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw" alt="" width="1000" height="562" loading="lazy" decoding="async"></div>
                 <div class="news-card__body">
                   <p class="news-card__meta"><span class="news-card__tag">El Colombiano</span><time datetime="2016-05-19">19 may 2016</time></p>
                   <h3 class="news-card__title">Tumba indígena de más de 2.000 años fue encontrada en Itagüí</h3>
@@ -1035,7 +1097,7 @@
             </li>
             <li class="news-card">
               <a class="news-card__link" href="https://artdaily.com/news/87817/Pre-Hispanic-tombs-found-in-Colombia-are-over-2-000-ye" target="_blank" rel="noopener" hreflang="en">
-                <div class="news-card__media"><img src="img-original/colombia4_0d9ebaf0.jpg" alt="" width="1280" height="960" loading="lazy" decoding="async"></div>
+                <div class="news-card__media"><img src="img-opt/colombia4_0d9ebaf0-800.webp" srcset="img-opt/colombia4_0d9ebaf0-480.webp 480w, img-opt/colombia4_0d9ebaf0-800.webp 800w, img-opt/colombia4_0d9ebaf0-1200.webp 1200w, img-opt/colombia4_0d9ebaf0-1280.webp 1280w" sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw" alt="" width="1280" height="960" loading="lazy" decoding="async"></div>
                 <div class="news-card__body">
                   <p class="news-card__meta"><span class="news-card__tag">AFP · en inglés</span><time datetime="2016-06">jun 2016</time></p>
                   <h3 class="news-card__title">Hallan 3 tumbas de más de 2.000 años en el área metropolitana de Medellín</h3>
@@ -1045,7 +1107,7 @@
             </li>
             <li class="news-card">
               <a class="news-card__link" href="https://www.medellin.gov.co/es/sala-de-prensa/noticias/hallados-yacimientos-arqueologicos-en-zona-del-canal-telemedellin/" target="_blank" rel="noopener">
-                <div class="news-card__media"><img src="img-original/hallazgo-vasijas-telemedellin.jpg" alt="" width="580" height="365" loading="lazy" decoding="async"></div>
+                <div class="news-card__media"><img src="img-opt/hallazgo-vasijas-telemedellin-580.webp" srcset="img-opt/hallazgo-vasijas-telemedellin-480.webp 480w, img-opt/hallazgo-vasijas-telemedellin-580.webp 580w" sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw" alt="" width="580" height="365" loading="lazy" decoding="async"></div>
                 <div class="news-card__body">
                   <p class="news-card__meta"><span class="news-card__tag">Alcaldía de Medellín</span><time datetime="2024-03-20">20 mar 2024</time></p>
                   <h3 class="news-card__title">Hallados yacimientos arqueológicos en zona del canal Telemedellín</h3>
@@ -1055,7 +1117,7 @@
             </li>
             <li class="news-card">
               <a class="news-card__link" href="https://corporacionsipah.org/2019/09/27/petroglifos-de-itagui-una-historia-por-contar/" target="_blank" rel="noopener">
-                <div class="news-card__media"><img src="img-original/petroglifo.jpeg" alt="" width="720" height="540" loading="lazy" decoding="async"></div>
+                <div class="news-card__media"><img src="img-opt/petroglifo-720.webp" srcset="img-opt/petroglifo-480.webp 480w, img-opt/petroglifo-720.webp 720w" sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw" alt="" width="720" height="540" loading="lazy" decoding="async"></div>
                 <div class="news-card__body">
                   <p class="news-card__meta"><span class="news-card__tag">Corporación SIPAH</span><time datetime="2019-09-27">27 sep 2019</time></p>
                   <h3 class="news-card__title">Petroglifos de Itagüí: una historia por contar</h3>
@@ -1082,25 +1144,25 @@
         <ul class="gteaser" data-reveal-group>
           <li>
             <a class="gteaser__item" href="galeria.html#tumbas-sur-medellin">
-              <img src="img-original/colombia4_0d9ebaf0.jpg" alt="Excavación de las tumbas prehispánicas halladas al sur de Medellín" width="1280" height="960" loading="lazy" decoding="async">
+              <img src="img-opt/colombia4_0d9ebaf0-800.webp" srcset="img-opt/colombia4_0d9ebaf0-480.webp 480w, img-opt/colombia4_0d9ebaf0-800.webp 800w, img-opt/colombia4_0d9ebaf0-1200.webp 1200w, img-opt/colombia4_0d9ebaf0-1280.webp 1280w" sizes="(min-width: 768px) 25vw, 50vw" alt="Excavación de las tumbas prehispánicas halladas al sur de Medellín" width="1280" height="960" loading="lazy" decoding="async">
               <span class="gteaser__label">Tres tumbas de 2.000 años</span>
             </a>
           </li>
           <li>
             <a class="gteaser__item" href="galeria.html#petroglifo">
-              <img src="img-original/petroglifo.jpeg" alt="Petroglifo con figuras talladas en roca en Itagüí" width="720" height="540" loading="lazy" decoding="async">
+              <img src="img-opt/petroglifo-720.webp" srcset="img-opt/petroglifo-480.webp 480w, img-opt/petroglifo-720.webp 720w" sizes="(min-width: 768px) 25vw, 50vw" alt="Petroglifo con figuras talladas en roca en Itagüí" width="720" height="540" loading="lazy" decoding="async">
               <span class="gteaser__label">Espirales en la ladera</span>
             </a>
           </li>
           <li>
             <a class="gteaser__item" href="galeria.html#motomuseo">
-              <img src="img-original/4-1-1024x1024.jpeg" alt="Motomuseo itinerante de SIPAH, triciclo rojo adaptado como museo móvil" width="1024" height="1024" loading="lazy" decoding="async">
+              <img src="img-opt/4-1-1024x1024-800.webp" srcset="img-opt/4-1-1024x1024-480.webp 480w, img-opt/4-1-1024x1024-800.webp 800w, img-opt/4-1-1024x1024-1024.webp 1024w" sizes="(min-width: 768px) 25vw, 50vw" alt="Motomuseo itinerante de SIPAH, triciclo rojo adaptado como museo móvil" width="1024" height="1024" loading="lazy" decoding="async">
               <span class="gteaser__label">El museo sobre ruedas</span>
             </a>
           </li>
           <li>
             <a class="gteaser__item" href="galeria.html#familias-verdes">
-              <img src="img-original/familias-verdes.jpg" alt="Siembra Familias Verdes en el parque de los Petroglifos" width="1600" height="1067" loading="lazy" decoding="async">
+              <img src="img-opt/familias-verdes-800.webp" srcset="img-opt/familias-verdes-480.webp 480w, img-opt/familias-verdes-800.webp 800w, img-opt/familias-verdes-1200.webp 1200w, img-opt/familias-verdes-1600.webp 1600w" sizes="(min-width: 768px) 25vw, 50vw" alt="Siembra Familias Verdes en el parque de los Petroglifos" width="1600" height="1067" loading="lazy" decoding="async">
               <span class="gteaser__label">Familias Verdes</span>
             </a>
           </li>
@@ -1123,6 +1185,45 @@
           <li><span class="wordmark wordmark--italic">La Tartana</span></li>
           <li><span class="wordmark">Creavita</span></li>
         </ul>
+      </div>
+    </section>
+
+    <!-- ============ PREGUNTAS FRECUENTES ============
+         <details> nativo: accesible y funcional sin JS. El mismo texto alimenta
+         el JSON-LD FAQPage del <head> (si cambias una respuesta, cambia ambos). -->
+    <section class="section section--rule" id="preguntas" aria-labelledby="faq-title">
+      <div class="container faq">
+        <header class="faq__head" data-reveal>
+          <p class="eyebrow">13 — Preguntas frecuentes</p>
+          <h2 class="h2" id="faq-title">Lo que nos preguntan antes de empezar una obra</h2>
+          <p class="section__intro">Si tu duda no está aquí, escríbenos: te respondemos en 2 días hábiles.</p>
+        </header>
+        <div class="faq__list" data-reveal>
+          <details class="faq__item">
+            <summary class="faq__q"><span>¿Qué obras necesitan un Programa de Arqueología Preventiva?</span><svg class="icon" aria-hidden="true"><use href="#i-chev-r"/></svg></summary>
+            <div class="faq__a"><p>Por ley, los proyectos que requieren licencia ambiental deben contar con un Programa de Arqueología Preventiva aprobado por el ICANH antes de intervenir el suelo (Ley 1185 de 2008 y Decreto 138 de 2019). En otros casos puede exigirlo el plan de ordenamiento territorial o el plan de manejo de una zona de interés arqueológico. Si no tienes claro tu caso, lo revisamos contigo.</p></div>
+          </details>
+          <details class="faq__item">
+            <summary class="faq__q"><span>¿Qué pasa si aparece un hallazgo arqueológico durante la obra?</span><svg class="icon" aria-hidden="true"><use href="#i-chev-r"/></svg></summary>
+            <div class="faq__a"><p>Hay que detener la intervención en ese punto y dar aviso al ICANH, que define cómo continuar. Con un programa de arqueología preventiva en marcha, el equipo arqueológico ya está en la obra para registrar y rescatar el hallazgo con control estratigráfico, y la afectación al cronograma es menor.</p></div>
+          </details>
+          <details class="faq__item">
+            <summary class="faq__q"><span>¿Cuánto tarda un estudio arqueológico?</span><svg class="icon" aria-hidden="true"><use href="#i-chev-r"/></svg></summary>
+            <div class="faq__a"><p>Depende del área, del potencial arqueológico del terreno y de la fase del proyecto: no es lo mismo un diagnóstico que un rescate. En la cotización te entregamos un cronograma por fases ajustado a tu obra.</p></div>
+          </details>
+          <details class="faq__item">
+            <summary class="faq__q"><span>¿Qué entregan al terminar?</span><svg class="icon" aria-hidden="true"><use href="#i-chev-r"/></svg></summary>
+            <div class="faq__a"><p>El informe técnico para radicar ante el ICANH, con el registro de campo, la cartografía, los análisis de laboratorio de los materiales y las medidas de manejo. También acompañamos la divulgación del conocimiento con la comunidad cuando el proyecto lo requiere.</p></div>
+          </details>
+          <details class="faq__item">
+            <summary class="faq__q"><span>¿Tienen laboratorio propio?</span><svg class="icon" aria-hidden="true"><use href="#i-chev-r"/></svg></summary>
+            <div class="faq__a"><p>Sí. En nuestra sede de Itagüí analizamos material lítico, cerámico, óseo, de suelos, metales y fauna, y hacemos registro, inventario, conservación y escaneo 3D de piezas.</p></div>
+          </details>
+          <details class="faq__item">
+            <summary class="faq__q"><span>¿Cómo empiezo?</span><svg class="icon" aria-hidden="true"><use href="#i-chev-r"/></svg></summary>
+            <div class="faq__a"><p>Responde las tres preguntas del asistente de esta página o escríbenos con la ubicación y el alcance de tu proyecto. Respondemos en un plazo de 2 días hábiles.</p></div>
+          </details>
+        </div>
       </div>
     </section>
 
@@ -1175,7 +1276,7 @@
           </div>
           <div class="quiz__nav">
             <button class="quiz__back" type="button" data-quiz-back hidden><svg class="icon" aria-hidden="true"><use href="#i-chev-l"/></svg>Atrás</button>
-            <a class="btn btn--light" href="#contacto" data-quiz-cta>Solicitar cotización <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+            <a class="btn btn--light" href="#contacto" data-quiz-cta data-track="Asistente: cotización">Solicitar cotización <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></a>
           </div>
         </form>
       </div>
@@ -1185,7 +1286,7 @@
     <section class="section" id="contacto" aria-labelledby="contacto-title">
       <div class="container contact">
         <div class="contact__info" data-reveal>
-          <p class="eyebrow">13 — Contacto</p>
+          <p class="eyebrow">14 — Contacto</p>
           <h2 class="h2" id="contacto-title">Escríbenos o visítanos en El Rosario</h2>
           <ul class="contact__list">
             <li><svg class="icon" aria-hidden="true"><use href="#i-pin"/></svg><span>Carrera 57 # 46 C 14, El Rosario<br>Itagüí, Antioquia · C.P. 055412</span></li>
@@ -1193,8 +1294,32 @@
             <li><svg class="icon" aria-hidden="true"><use href="#i-mail"/></svg><a href="mailto:sipahitagui@gmail.com">sipahitagui@gmail.com</a></li>
           </ul>
           <a class="contact__route" href="https://www.google.com/maps/dir/?api=1&amp;destination=Carrera+57+%2346C-14,+El+Rosario,+Itag%C3%BC%C3%AD,+Antioquia" target="_blank" rel="noopener">Cómo llegar <svg class="icon" aria-hidden="true"><use href="#i-external"/></svg></a>
-          <div class="map">
-            <iframe title="Mapa: sede de SIPAH en El Rosario, Itagüí" src="https://www.google.com/maps?q=Carrera+57+%2346C-14,+El+Rosario,+Itag%C3%BC%C3%AD,+Antioquia,+Colombia&output=embed" width="600" height="360" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>
+          <!-- Mapa en dos tiempos: primero una vista ligera dibujada (0 KB de Google);
+               el mapa interactivo (~1 MB de scripts de terceros) solo se carga al pedirlo. -->
+          <div class="map" data-map
+               data-map-src="https://www.google.com/maps?q=Carrera+57+%2346C-14,+El+Rosario,+Itag%C3%BC%C3%AD,+Antioquia,+Colombia&amp;output=embed">
+            <button class="map__facade" type="button" data-map-load aria-label="Cargar el mapa interactivo de Google con la sede de SIPAH">
+              <svg class="map__art" viewBox="0 0 600 375" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false">
+                <g class="map__streets">
+                  <path d="M-20 120C120 110 260 150 380 130S560 90 640 100"/>
+                  <path d="M-20 260C140 250 230 220 340 240S520 290 640 270"/>
+                  <path d="M150 -20C160 100 140 220 170 400"/>
+                  <path d="M420 -20C400 120 440 250 410 400"/>
+                  <path class="map__street--minor" d="M-20 190H640M290 -20V400M60 -20C80 150 50 260 70 400M520 -20C540 140 510 260 540 400"/>
+                </g>
+                <path class="map__river" d="M560 -20C520 80 480 160 500 240S470 360 450 400"/>
+                <g class="map__pin" transform="translate(300 182)">
+                  <circle class="map__halo" r="26"/>
+                  <path d="M0 14S-14 1-14-8a14 14 0 0 1 28 0C14 1 0 14 0 14z"/>
+                  <circle class="map__dot" cy="-8" r="5"/>
+                </g>
+              </svg>
+              <span class="map__card">
+                <strong>Sede SIPAH · Museo G.A.V.</strong>
+                <span>Carrera 57 # 46 C 14, El Rosario, Itagüí</span>
+              </span>
+              <span class="map__cta"><svg class="icon" aria-hidden="true"><use href="#i-map"/></svg>Ver mapa interactivo</span>
+            </button>
           </div>
         </div>
 
@@ -1278,6 +1403,7 @@
           <li><a href="#museo">Museo</a></li>
           <li><a href="#equipo">Equipo</a></li>
           <li><a href="#noticias">Prensa</a></li>
+          <li><a href="#preguntas">Preguntas frecuentes</a></li>
           <li><a href="galeria.html">Galería</a></li>
         </ul>
       </nav>
