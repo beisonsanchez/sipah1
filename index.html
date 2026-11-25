@@ -36,7 +36,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 
-  <link rel="preload" as="image" href="img-original/colombia4_0d9ebaf0.jpg" fetchpriority="high">
+  <!-- Póster del video del hero: es lo primero que se pinta (y lo único con ahorro de datos) -->
+  <link rel="preload" as="image" href="sipah-fondo-poster.jpg" fetchpriority="high">
   <link rel="stylesheet" href="styles.css">
 
   <script type="application/ld+json">
@@ -109,6 +110,8 @@
       <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
       <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
       <symbol id="i-external" viewBox="0 0 24 24"><path d="M14 5h5v5M19 5l-8 8M17 14v4a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1h4"/></symbol>
+      <symbol id="i-pause" viewBox="0 0 24 24"><path fill="currentColor" stroke="none" d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z"/></symbol>
+      <symbol id="i-play" viewBox="0 0 24 24"><path fill="currentColor" stroke="none" d="M8 5.5v13a.8.8 0 0 0 1.2.7l10.4-6.5a.8.8 0 0 0 0-1.4L9.2 4.8A.8.8 0 0 0 8 5.5z"/></symbol>
       <symbol id="i-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.5v.01"/></symbol>
       <!-- Servicios -->
       <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></symbol>
@@ -165,45 +168,45 @@
   <main id="contenido">
 
     <!-- ============ HERO ============ -->
-    <!-- Secuencia por scroll: el hero queda fijo (sticky) y las fotos del equipo
-         trabajando se suceden con un fundido a medida que se baja. -->
+    <!-- Video de fondo (16 s en bucle, sin audio): grabados de petroglifos sobre
+         tonos tierra. Las fuentes van en data-src y main.js las activa solo si
+         conviene: no se descargan con ahorro de datos ni con movimiento reducido.
+         Sin JS (o si el autoplay falla) queda el póster, y debajo el mismo póster
+         como fondo del hero. -->
     <section class="hero" id="inicio" aria-labelledby="hero-title" data-hero>
-     <div class="hero__sticky">
-      <div class="hero__media" aria-hidden="true">
-        <!-- data-label: nombre corto de la escena · data-scene: frase que acompaña la foto -->
-        <img class="hero__img is-active" data-label="Excavación" data-scene="Excavamos con método y control estratigráfico." src="img-original/colombia4_0d9ebaf0.jpg" alt="" width="1280" height="960" fetchpriority="high" decoding="async">
-        <img class="hero__img" data-label="Trabajo de campo" data-scene="Recorremos el territorio junto a sus comunidades." src="img-original/practicas.jpg" alt="" width="1000" height="563" fetchpriority="low" decoding="async">
-        <img class="hero__img" data-label="Laboratorio" data-scene="Leemos en cada fragmento la vida de quienes nos precedieron." src="img-original/investigador-768x1024.jpg" alt="" width="768" height="1024" fetchpriority="low" decoding="async" style="object-position: 50% 30%">
-        <img class="hero__img" data-label="Registro e inventario" data-scene="Registramos y conservamos cada pieza para el futuro." src="img-original/registro-inventario.jpg" alt="" width="1272" height="508" fetchpriority="low" decoding="async">
-        <img class="hero__img" data-label="Educación ambiental" data-scene="Devolvemos el conocimiento a la gente." src="img-original/familias-verdes.jpg" alt="" width="1600" height="1067" fetchpriority="low" decoding="async">
-      </div>
+      <video class="hero__video" autoplay muted loop playsinline preload="metadata"
+             poster="sipah-fondo-poster.jpg" width="1920" height="1080"
+             aria-hidden="true" tabindex="-1" disablepictureinpicture data-hero-video>
+        <source data-src="sipah-fondo.webm" type="video/webm">
+        <source data-src="sipah-fondo.mp4" type="video/mp4">
+      </video>
       <div class="hero__overlay" aria-hidden="true"></div>
       <!-- Coordenadas de la sede, como en una ficha de campo -->
       <p class="hero__coords" aria-hidden="true">6°10′ N · 75°37′ O<br>El Rosario · Itagüí · Antioquia</p>
       <div class="hero__content container">
-        <p class="eyebrow eyebrow--light hero-in" style="--i:0">Arqueología · Patrimonio · Territorio</p>
-        <h1 class="hero__title" id="hero-title" data-split>Descubrimos la historia que <em>guarda la tierra</em></h1>
-        <p class="hero__sub hero-in" style="--i:2">Investigación arqueológica, gestión patrimonial y estudios ambientales para obras públicas y privadas en Colombia. Laboratorio propio en Itagüí.</p>
+        <p class="eyebrow eyebrow--light hero-in" style="--i:0">Arqueología · Patrimonio · Ambiente</p>
+        <h1 class="hero__title" id="hero-title" data-split>Investigamos y protegemos <em>la&nbsp;memoria de Antioquia</em></h1>
+        <p class="hero__sub hero-in" style="--i:2">Más de dos décadas estudiando el patrimonio arqueológico, social y ambiental de nuestro territorio.</p>
         <!-- Credenciales en el primer segundo: datos reales con fuente en la página -->
         <ul class="hero__proof hero-in" style="--i:3" aria-label="SIPAH en datos">
           <li><strong>+10.000</strong> fragmentos documentados en Telemedellín</li>
           <li><strong>2.500</strong> años de historia excavada</li>
           <li><strong>ICANH</strong> supervisión en cada programa</li>
         </ul>
-        <div class="hero__ctas hero-in" style="--i:3">
-          <a class="btn btn--primary" href="#servicios">Nuestros servicios <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></a>
-          <a class="btn btn--glass" href="#proyectos">Ver proyectos</a>
+        <div class="hero__ctas hero-in" style="--i:4">
+          <a class="btn btn--primary" href="#servicios">Conoce nuestros servicios <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+          <a class="btn btn--outline-light" href="#contacto">Agenda una visita</a>
         </div>
       </div>
-      <!-- Indicador: orienta en qué foto de la secuencia estás -->
-      <div class="hero__frames container hero-in" style="--i:4">
-        <p class="hero__frame-label" aria-hidden="true"><span data-hero-count>01</span><span class="hero__frame-total">/ 05</span><span data-hero-label>Excavación</span></p>
-        <p class="hero__scene" data-hero-scene aria-hidden="true">Excavamos con método y control estratigráfico.</p>
-        <ol class="hero__bars" data-hero-bars aria-hidden="true"><li><span></span></li><li><span></span></li><li><span></span></li><li><span></span></li><li><span></span></li></ol>
-        <!-- Salida explícita de la secuencia: nadie queda atrapado en 5 tramos de scroll -->
-        <a class="hero__skip" href="#nosotros" data-hero-skip>Saltar intro <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></a>
-      </div>
-     </div>
+      <!-- Indicador de scroll: un punto baja dentro de una cápsula -->
+      <a class="hero__scroll hero-in" style="--i:5" href="#nosotros" aria-label="Bajar a la siguiente sección" data-hero-scroll>
+        <span class="hero__scroll-mouse" aria-hidden="true"><span></span></span>
+      </a>
+      <!-- Pausa / reproducción del video (WCAG 2.2.2: todo movimiento de más de 5 s se puede detener) -->
+      <button class="hero__toggle" type="button" aria-label="Pausar el video de fondo" data-hero-toggle hidden>
+        <svg class="icon icon--pause" aria-hidden="true"><use href="#i-pause"/></svg>
+        <svg class="icon icon--play" aria-hidden="true"><use href="#i-play"/></svg>
+      </button>
     </section>
 
     <!-- Divisor en estratos: capas de suelo con colores de la tabla Munsell -->

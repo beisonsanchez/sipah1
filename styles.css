@@ -473,146 +473,161 @@ em { font-style: italic; }
 .nav__menu .icon { width: 24px; height: 24px; }
 
 /* 07a. HERO ------------------------------------------------------------- */
-/* El hero es más alto que la pantalla: su contenido queda fijo (sticky) mientras
-   se recorre ese tramo, y main.js cambia la foto según el progreso del scroll.
-   Sin overflow:hidden en .hero (rompería el sticky); el recorte va en .hero__sticky. */
+/* Una pantalla con video de fondo. Capas (de atrás hacia delante):
+   póster como background → video → degradado → contenido. Con isolation el
+   z-index negativo del video queda dentro del hero y no detrás de la página. */
 .hero {
-  --frames: 5;
-  --frame-scroll: 70vh;     /* scroll necesario para pasar a la siguiente foto */
   position: relative;
-  height: calc(100vh + (var(--frames) - 1) * var(--frame-scroll));
-  height: calc(100svh + (var(--frames) - 1) * var(--frame-scroll));
-  color: var(--white);
-  background: var(--deep);
-}
-.hero__sticky {
-  position: sticky;
-  top: 0;
-  height: 100vh;
-  height: 100svh;
+  min-height: 100vh;
+  min-height: 100svh;          /* móvil: no salta cuando aparece/desaparece la barra del navegador */
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
+  justify-content: center;
   overflow: hidden;
   isolation: isolate;
+  color: var(--white);
+  /* Respaldo: el mismo póster. Se ve si el video no carga, con ahorro de datos
+     o con movimiento reducido (en esos casos el video ni se descarga). */
+  background: var(--deep) url("sipah-fondo-poster.jpg") 50% 50% / cover no-repeat;
 }
-/* Zoom lento de entrada 1.08 → 1 en el contenedor (se ve una vez al cargar);
-   la escala de cada foto la controla el scroll desde main.js. */
-.hero__media { position: absolute; inset: 0; z-index: -2; animation: hero-zoom 2000ms var(--ease-out) both; }
-@keyframes hero-zoom { from { transform: scale(1.08); } to { transform: scale(1); } }
-.hero__img {
+.hero__video {
   position: absolute;
   inset: 0;
+  z-index: -2;
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: 50% 40%;
-  opacity: 0;
-  transform: scale(1.08);
-  transition: opacity 600ms ease; /* fundido entre fotos; la escala va 1:1 con el scroll */
-  will-change: transform, opacity;
+  pointer-events: none;
 }
-.hero__img.is-active { opacity: 1; }
-.hero__img:first-child { transform: scale(1.08); }
+/* Sin video que mostrar (ahorro de datos, reduced motion): fuera del árbol visual */
+.hero.is-static .hero__video { display: none; }
+/* Degradado tierra oscura: más ligero arriba (se ven los grabados) y denso abajo,
+   más un halo detrás del texto centrado para asegurar contraste AA del blanco. */
 .hero__overlay {
   position: absolute;
   inset: 0;
   z-index: -1;
   background:
-    linear-gradient(180deg, rgb(20 20 18 / 0.55) 0%, rgb(20 20 18 / 0) 28%),
-    linear-gradient(0deg, rgb(20 20 18 / 0.9) 0%, rgb(20 20 18 / 0.62) 50%, rgb(20 20 18 / 0.2) 85%);
+    radial-gradient(ellipse 70% 55% at 50% 52%, rgb(20 13 8 / 0.35), rgb(20 13 8 / 0) 72%),
+    linear-gradient(180deg, rgb(20 13 8 / 0.35) 0%, rgb(20 13 8 / 0.75) 100%);
 }
-.hero__content { padding-bottom: clamp(2rem, 6vh, 4.5rem); padding-top: calc(var(--nav-h) + 3rem); }
+.hero__content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding-top: calc(var(--nav-h) + 2.5rem);
+  padding-bottom: 6.5rem;      /* deja sitio al indicador de scroll */
+}
 .hero__title {
   font-family: var(--font-serif);
-  font-size: var(--fs-3xl);
-  line-height: 0.98;
+  font-size: clamp(2.75rem, 1.4rem + 4.6vw, 5.5rem);
+  line-height: 1;
   letter-spacing: -0.03em;
-  max-width: 13ch;
+  max-width: 15ch;
+  margin-inline: auto;
+  text-wrap: balance;
 }
 .hero__title em { color: var(--gold-light); }
 .hero__sub {
-  max-width: 38rem;
-  margin-top: var(--space-5);
+  max-width: 36rem;
+  margin: var(--space-5) auto 0;
   font-size: var(--fs-md);
-  color: rgb(255 255 255 / 0.82);
+  color: rgb(255 255 255 / 0.86);
+  text-wrap: pretty;
 }
-.hero__ctas { display: flex; flex-wrap: wrap; gap: 12px; margin-top: var(--space-6); }
-/* Indicador de la secuencia: número, etiqueta y barras que se llenan con el scroll */
-.hero__frames {
-  display: flex;
-  align-items: center;
-  gap: var(--space-5);
-  padding-block: var(--space-4) max(var(--space-4), env(safe-area-inset-bottom));
-  border-top: 1px solid var(--line-light);
+.hero__ctas { display: flex; flex-wrap: wrap; justify-content: center; gap: 12px; margin-top: var(--space-6); }
+
+/* Botón secundario sobre fondo oscuro: transparente con borde blanco */
+.btn--outline-light {
+  --btn-bg: transparent;
+  --btn-fg: var(--white);
+  box-shadow: inset 0 0 0 1.5px rgb(255 255 255 / 0.85);
 }
-.hero__frame-label {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  flex-shrink: 0;
-  font-size: var(--fs-xs);
-  letter-spacing: var(--label-track);
-  text-transform: uppercase;
-  color: rgb(255 255 255 / 0.75);
-  font-variant-numeric: tabular-nums;
-}
-.hero__frame-label [data-hero-count] { color: var(--white); font-weight: 600; }
-.hero__frame-total { margin-right: 6px; }
-/* Frase de la escena: serif itálica, la voz narrativa de cada foto */
-.hero__scene {
-  flex: 1;
-  min-width: 0;
-  font-family: var(--font-serif);
-  font-style: italic;
-  font-size: clamp(1.0625rem, 0.95rem + 0.5vw, 1.375rem);
-  line-height: 1.25;
-  letter-spacing: -0.005em;
-  color: var(--white);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-/* Salir de la secuencia: rótulo mono discreto, con zona táctil de 44px */
-.hero__skip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 44px;
-  flex-shrink: 0;
-  font-family: var(--font-mono);
-  font-size: var(--label);
-  letter-spacing: var(--label-track);
-  text-transform: uppercase;
-  text-decoration: none;
-  color: rgb(255 255 255 / 0.75);
-  transition: color var(--dur-micro) ease, opacity var(--dur-ui) ease;
-}
-.hero__skip .icon { width: 1em; height: 1em; transform: rotate(90deg); transition: transform var(--dur-micro) var(--ease-out); }
-.hero__skip:active { opacity: 0.6; }
 @media (hover: hover) and (pointer: fine) {
-  .hero__skip:hover { color: var(--white); }
-  .hero__skip:hover .icon { transform: rotate(90deg) translateX(3px); }
+  .btn--outline-light:hover { --btn-bg: rgb(255 255 255 / 0.1); box-shadow: inset 0 0 0 1.5px var(--white); }
 }
-@media (max-width: 767px) {
-  /* Móvil: cada foto pide menos recorrido (5 × 45vh en vez de 5 × 70vh) */
-  .hero { --frame-scroll: 45vh; }
-  .hero__frames { flex-wrap: wrap; row-gap: var(--space-2); }
-  .hero__scene { order: 3; flex-basis: 100%; white-space: normal; }
-  /* Fila 1: rótulo + salir · fila 2: frase · fila 3: barras a todo el ancho */
-  .hero__skip { margin-left: auto; }
-  .hero__frames .hero__bars { order: 4; flex-basis: 100%; max-width: none; margin-left: 0; }
+
+/* Indicador de scroll: cápsula con un punto que baja y se desvanece */
+.hero__scroll {
+  position: absolute;
+  left: 50%;
+  bottom: max(var(--space-5), env(safe-area-inset-bottom));
+  translate: -50% 0;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 56px;
+  border-radius: var(--radius-pill);
+  transition: opacity var(--dur-ui) ease;
 }
-.hero__bars { flex: 1; display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; max-width: 360px; margin-left: auto; }
-.hero__bars li { height: 2px; background: rgb(255 255 255 / 0.22); border-radius: 2px; overflow: hidden; }
-.hero__bars span {
+.hero__scroll-mouse {
   display: block;
-  height: 100%;
-  background: var(--gold-light);
-  transform: scaleX(0);
-  transform-origin: 0 50%;
+  width: 24px;
+  height: 38px;
+  border: 1.5px solid rgb(255 255 255 / 0.7);
+  border-radius: 12px;
+  position: relative;
 }
-/* Coreografía de entrada del hero: stagger corto, ease-out, desde blur + 12px */
+.hero__scroll-mouse span {
+  position: absolute;
+  left: 50%;
+  top: 7px;
+  width: 4px;
+  height: 7px;
+  margin-left: -2px;
+  border-radius: 2px;
+  background: var(--white);
+  animation: scroll-cue 1.8s var(--ease-in-out) infinite;
+}
+@keyframes scroll-cue {
+  0% { transform: translateY(0); opacity: 0; }
+  20% { opacity: 1; }
+  70% { transform: translateY(12px); opacity: 0; }
+  100% { transform: translateY(12px); opacity: 0; }
+}
+.hero.is-scrolled .hero__scroll { opacity: 0; pointer-events: none; }
+.hero__scroll:active .hero__scroll-mouse { transform: scale(0.94); }
+
+/* Pausa / play: discreto, blanco semitransparente, esquina inferior derecha */
+.hero__toggle {
+  position: absolute;
+  right: max(var(--gutter), calc((100vw - var(--container)) / 2));
+  bottom: max(var(--space-5), env(safe-area-inset-bottom));
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  color: rgb(255 255 255 / 0.7);
+  background: rgb(20 13 8 / 0.25);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.22);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  transition: color var(--dur-micro) ease, background-color var(--dur-micro) ease, transform var(--dur-press) var(--ease-out);
+}
+.hero__toggle[hidden] { display: none; }
+.hero__toggle .icon { width: 16px; height: 16px; }
+.hero__toggle .icon--play,
+.hero__toggle.is-paused .icon--pause { display: none; }
+.hero__toggle.is-paused .icon--play { display: block; }
+.hero__toggle:active { transform: scale(0.92); }
+@media (hover: hover) and (pointer: fine) {
+  .hero__toggle:hover { color: var(--white); background: rgb(20 13 8 / 0.45); }
+}
+
+@media (max-width: 767px) {
+  .hero__title { font-size: clamp(2.25rem, 1.3rem + 4.6vw, 3.25rem); }
+  .hero__content { padding-bottom: 5.5rem; }
+  /* Botones apilados a todo el ancho */
+  .hero__ctas { flex-direction: column; align-self: stretch; }
+  .hero__ctas .btn { width: 100%; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .hero__toggle { background: rgb(20 13 8 / 0.8); backdrop-filter: none; }
+}
+
+/* Coreografía de entrada del hero: stagger corto, fade + subida de 12px */
 .js .hero-in {
   animation: enter var(--dur-enter) var(--ease-out) both;
   animation-delay: calc(250ms + var(--i) * 70ms);
@@ -1777,9 +1792,9 @@ body:has(.nav.is-hidden) .chapters-wrap { transform: translateY(calc(var(--nav-h
    Solo cambios de opacidad: sin parallax, desplazamientos, zoom ni blur. */
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
-  /* Secuencia del hero: solo fundido de opacidad, sin zoom ni escala */
-  .hero__media { animation: none; }
-  .hero__img, .hero__img:first-child { transform: none; transition: opacity 600ms ease; }
+  /* Hero: sin video (queda el póster como fondo) ni indicador animado */
+  .hero__video, .hero__toggle { display: none !important; }
+  .hero__scroll-mouse span { animation: none; opacity: 1; }
   .split-word__i { transform: none !important; transition: opacity var(--dur-enter) ease !important; }
   .js .hero-in { animation: fade var(--dur-enter) ease both; animation-delay: 0ms; }
   @keyframes fade { from { opacity: 0; } }
@@ -1825,8 +1840,6 @@ body:has(.nav.is-hidden) .chapters-wrap { transform: translateY(calc(var(--nav-h
 }
 @media (min-width: 1024px) { .hero__coords { display: block; right: max(var(--gutter), calc((100vw - var(--container)) / 2)); } }
 .hero__title { font-optical-sizing: auto; font-weight: 400; letter-spacing: -0.025em; }
-.hero__frame-label, .hero__scene { font-family: var(--font-mono); }
-.hero__scene { font-family: var(--font-serif); }
 
 /* Estratos: capas de suelo con colores Munsell */
 .strata { display: block; height: 28px; line-height: 0; background: var(--soil-5); }
@@ -2424,8 +2437,8 @@ button, .btn, [role="button"], .filter, .nav__links a, .drawer__links a, .whatsa
 
 /* ==========================================================================
    27. PULIDO VISUAL
-   27a. Pausas oscuras · 27b. Profundidad de proyectos · 27c. Hero (overlay,
-   fundido, pantallas anchas) · 27d. Modo oscuro
+   27a. Pausas oscuras · 27b. Profundidad de proyectos · 27c. Hero (texto
+   sobre el video) · 27d. Modo oscuro
    ========================================================================== */
 
 /* 27a. Pausas oscuras: rompen los tramos largos de secciones claras ----- */
@@ -2452,38 +2465,11 @@ button, .btn, [role="button"], .filter, .nav__links a, .drawer__links a, .whatsa
 }
 
 /* 27c. Hero ---------------------------------------------------------------- */
-/* Overlay más ligero (las fotos de campo son el activo de la marca) y un halo
-   suave solo detrás del bloque de texto para mantener el contraste del título. */
-.hero__overlay {
-  background:
-    radial-gradient(ellipse 75% 65% at 12% 88%, rgb(20 20 18 / 0.42), rgb(20 20 18 / 0) 70%),
-    linear-gradient(180deg, rgb(20 20 18 / 0.5) 0%, rgb(20 20 18 / 0) 26%),
-    linear-gradient(0deg, rgb(20 20 18 / 0.78) 0%, rgb(20 20 18 / 0.45) 45%, rgb(20 20 18 / 0.1) 85%);
-}
+/* Sombra de texto suave: el video se mueve debajo y el contraste no debe depender
+   del fotograma. Las credenciales se centran como el resto del bloque. */
 .hero__sub, .hero__proof { text-shadow: 0 1px 12px rgb(0 0 0 / 0.45); }
-
-/* Cambio de foto como un "rack focus": la saliente se desenfoca y oscurece
-   mientras se va; la entrante se enfoca. En reduced-motion queda solo el fundido. */
-@media (prefers-reduced-motion: no-preference) {
-  .hero__img {
-    filter: blur(10px) brightness(0.8);
-    transition: opacity 700ms ease, filter 900ms var(--ease-out);
-  }
-  .hero__img.is-active { filter: none; }
-}
-
-/* Pantallas anchas: la ficha de coordenadas baja y ocupa el vacío junto al título */
-@media (min-width: 1440px) {
-  .hero__title { max-width: 14ch; }
-  .hero__coords {
-    top: auto;
-    bottom: calc(clamp(2rem, 6vh, 4.5rem) + 84px);
-    padding-left: var(--space-4);
-    border-left: 1px solid var(--line-light);
-    text-align: left;
-    font-size: var(--label);
-  }
-}
+.hero__proof { justify-content: center; }
+@media (max-width: 767px) { .hero__proof { align-items: center; } }
 
 /* 27d. MODO OSCURO --------------------------------------------------------
    Solo cambian los roles claros (arena, papel, superficie, tinta). Las

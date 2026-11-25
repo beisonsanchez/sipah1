@@ -602,36 +602,10 @@
 
   /* 05. MOTOR DE SCROLL ----------------------------------------------------
      Un único listener pasivo + un rAF por frame para: barra de progreso,
-     navbar, parallax del hero, línea de tiempo y revelado del petroglifo. */
+     navbar, indicador de scroll del hero y línea de tiempo. */
   const progressBar = $('.scroll-progress span');
   const nav = $('[data-nav]');
   const heroEl = $('[data-hero]');
-  const heroImgs = $$('.hero__img', heroEl);
-  const heroBars = $$('[data-hero-bars] span', heroEl);
-  const heroCount = $('[data-hero-count]', heroEl);
-  const heroLabel = $('[data-hero-label]', heroEl);
-  const heroScene = $('[data-hero-scene]', heroEl);
-  let heroFrame = 0;
-
-  /* Cambio de frase: la saliente se va y la nueva entra en la dirección del
-     scroll (bajar → de abajo hacia arriba; subir → al revés). Blur corto para
-     fundir ambos estados; se cancela si llega otro cambio a mitad. */
-  function swapScene(text, dir) {
-    heroScene.getAnimations().forEach((a) => a.cancel());
-    if (reduced) { heroScene.textContent = text; return; }
-    const out = heroScene.animate(
-      [{ opacity: 1, transform: 'none', filter: 'blur(0)' }, { opacity: 0, transform: `translateY(${-10 * dir}px)`, filter: 'blur(4px)' }],
-      { duration: 150, easing: EASE_OUT, fill: 'forwards' }
-    );
-    out.onfinish = () => {
-      heroScene.textContent = text;
-      out.cancel();
-      heroScene.animate(
-        [{ opacity: 0, transform: `translateY(${12 * dir}px)`, filter: 'blur(4px)' }, { opacity: 1, transform: 'none', filter: 'blur(0)' }],
-        { duration: 350, easing: EASE_OUT }
-      );
-    };
-  }
   const timeline = $('[data-timeline]');
   const track = $('[data-timeline-track]');
   const timelineBar = $('[data-timeline-bar]');
@@ -658,10 +632,10 @@
     // Barra de progreso (lineal, sin transición: sigue al scroll exacto)
     progressBar.style.transform = `scaleX(${max > 0 ? y / max : 0})`;
 
-    // Navbar: compacta tras 40px; se oculta al bajar y vuelve al subir
-    // Dentro de la secuencia del hero la barra sigue transparente sobre la foto
-    const heroEnd = heroEl.offsetHeight - vh;
-    const navT = clamp((y - heroEnd) / 240);
+    // Navbar: transparente sobre el video del hero; toma fondo al empezar a bajar
+    // y se compacta tras ~40px. Se oculta al bajar y vuelve al subir.
+    const heroH = heroEl.offsetHeight;
+    const navT = clamp(y / 240);
     nav.style.setProperty('--nav-t', navT.toFixed(3));
     const compact = navT > 0.15;
     nav.classList.toggle('is-compact', compact);
@@ -671,39 +645,15 @@
       // En modo oscuro la arena es oscura: se lee del token, no de un hex fijo
       themeMeta.content = compact ? getComputedStyle(document.documentElement).getPropertyValue('--sand').trim() : '#17150F';
     }
-    // WhatsApp aparece al terminar el hero para no tapar el indicador de fotos
-    if (waBtn) waBtn.classList.toggle('is-away', y < heroEnd - vh * 0.2);
+    // WhatsApp aparece pasada la mitad del hero: no se superpone al botón de pausa
+    if (waBtn) waBtn.classList.toggle('is-away', y < heroH * 0.5);
+    // El indicador de scroll ya cumplió su función en cuanto se baja un poco
+    heroEl.classList.toggle('is-scrolled', y > 24);
     const delta = y - lastY;
     const navLocked = drawerOpen || nav.contains(document.activeElement);
     if (!navLocked && delta > 6 && y > vh * 0.6) nav.classList.add('is-hidden');
     else if (delta < -6 || y < vh * 0.6 || navLocked) nav.classList.remove('is-hidden');
     if (Math.abs(delta) > 6) lastY = y;
-
-    // Parallax del hero (factor 0.3) solo mientras es visible
-    // Secuencia del hero: cada tramo de scroll muestra una foto distinta
-    if (y <= heroEl.offsetHeight) {
-      const n = heroImgs.length;
-      const p = heroEnd > 0 ? clamp(y / heroEnd) : 0;
-      const frame = Math.min(n - 1, Math.floor(p * n));
-      // Barras: la de la foto actual se llena según el avance dentro de su tramo
-      heroBars.forEach((bar, i) => { bar.style.transform = `scaleX(${clamp(p * n - i)})`; });
-      // Acercamiento ligado al scroll: cada foto se asienta de 1.08 a 1 durante su tramo
-      if (!reduced) {
-        heroImgs.forEach((img, i) => {
-          const local = clamp(p * n - i);
-          img.style.transform = `scale(${(1.08 - 0.08 * local).toFixed(4)})`;
-        });
-      }
-      if (frame !== heroFrame) {
-        const dir = frame > heroFrame ? 1 : -1;
-        heroImgs[heroFrame].classList.remove('is-active');
-        heroImgs[frame].classList.add('is-active');
-        heroFrame = frame;
-        heroCount.textContent = String(frame + 1).padStart(2, '0');
-        heroLabel.textContent = heroImgs[frame].dataset.label;
-        swapScene(heroImgs[frame].dataset.scene, dir);
-      }
-    }
 
     // Línea de tiempo horizontal
     if (timeline.classList.contains('is-pinned')) {
@@ -714,6 +664,80 @@
       track.style.transform = `translate3d(${-p * timelineDist + tlOvershoot}px, 0, 0)`;
       timelineBar.style.transform = `scaleX(${p})`;
     }
+  }
+
+  /* 05b. VIDEO DE FONDO DEL HERO -------------------------------------------
+     · Solo se descarga si conviene: con ahorro de datos (saveData) o con
+       movimiento reducido el hero queda estático con el póster.
+     · Se pausa fuera de pantalla (IntersectionObserver) y con la pestaña oculta;
+       se reanuda al volver, salvo que la persona lo haya pausado a mano.
+     · Si el navegador bloquea el autoplay, la promesa de play() se rechaza en
+       silencio: queda el póster y el botón ofrece reproducir. */
+  function initHeroVideo() {
+    const video = $('[data-hero-video]', heroEl);
+    const toggle = $('[data-hero-toggle]', heroEl);
+    if (!video) return;
+    const saveData = !!(navigator.connection && navigator.connection.saveData);
+    let userPaused = false;   // pausa elegida por la persona: manda sobre lo automático
+    let inView = true;
+    let loaded = false;
+
+    const setStatic = (on) => heroEl.classList.toggle('is-static', on);
+    const syncButton = () => {
+      const paused = video.paused;
+      toggle.classList.toggle('is-paused', paused);
+      toggle.setAttribute('aria-label', paused ? 'Reproducir el video de fondo' : 'Pausar el video de fondo');
+    };
+
+    // play() devuelve una promesa que se rechaza si el autoplay está bloqueado
+    const tryPlay = () => {
+      const p = video.play();
+      if (p && typeof p.catch === 'function') p.catch(() => syncButton());
+    };
+    const shouldPlay = () => loaded && !userPaused && inView && !document.hidden && !motionQuery.matches;
+    const sync = () => { if (shouldPlay()) tryPlay(); else if (!video.paused) video.pause(); };
+
+    function load() {
+      if (loaded) return;
+      loaded = true;
+      $$('source[data-src]', video).forEach((s) => { s.src = s.dataset.src; });
+      video.load();
+      setStatic(false);
+      toggle.hidden = false;
+      sync();
+    }
+    function unload() {
+      // Movimiento reducido activado en vivo: se detiene y se vuelve al póster
+      video.pause();
+      setStatic(true);
+      toggle.hidden = true;
+    }
+
+    video.addEventListener('play', syncButton);
+    video.addEventListener('pause', syncButton);
+    // Si ninguna fuente se puede reproducir (p. ej. falta el MP4 en un Safari sin WebM).
+    // El error de <source> no burbujea: se escucha en captura y solo cuenta el de la última.
+    const lastSource = $$('source', video).pop();
+    video.addEventListener('error', (e) => {
+      if (e.target === lastSource || e.target === video) { setStatic(true); toggle.hidden = true; }
+    }, true);
+
+    toggle.addEventListener('click', () => {
+      userPaused = !video.paused;
+      if (userPaused) video.pause(); else { inView = true; tryPlay(); }
+    });
+
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver(([en]) => { inView = en.isIntersecting; sync(); }, { threshold: 0 }).observe(heroEl);
+    }
+    document.addEventListener('visibilitychange', sync);
+    motionQuery.addEventListener('change', (e) => {
+      if (e.matches) unload();
+      else if (!saveData) { if (loaded) { setStatic(false); toggle.hidden = false; sync(); } else load(); }
+    });
+
+    if (saveData || reduced) setStatic(true);
+    else load();
   }
 
   /* 06. NAVBAR (aria-current según la sección visible) -------------------- */
@@ -1729,6 +1753,7 @@
     renderGallery();
     initFilters();
     initLightbox();
+    initHeroVideo();
     initActiveNav();
     initReveals();
     initProcess();
